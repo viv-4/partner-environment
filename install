@@ -1,0 +1,101 @@
+#!/usr/bin/env bash
+set -eo pipefail
+trap "exit" 2
+
+HELP=$(cat <<EOF
+Usage: ./install [options]
+
+install must be run from the root of the environment.
+
+Options:
+    -e, --elk                        Set up ELK stack
+    -s, --sentry                     Set up Sentry
+EOF
+)
+
+declare -a SERVICES
+
+setup_elastic_stack=false
+setup_sentry=false
+while [[ $# -gt 0 ]]
+do
+  arg="$1"
+  case $arg in
+    -e|--elk)
+    setup_elastic_stack=true
+    SERVICES+=('-e')
+    shift
+    ;;
+    -s|--sentry)
+    setup_sentry=true
+    SERVICES+=('-s')
+    shift
+    ;;
+    -h |--help | *)
+      printf "$HELP\n"
+      exit 1
+    ;;
+  esac
+done
+
+RED='\033[0;31m'
+NC='\033[0m'
+script_name="$(basename "${0}")"
+env_repo="partner-environment"
+current_repo="$(basename "$(git --git-dir="./.git" remote get-url origin 2> /dev/null)")"
+if [[ "${current_repo}" != "${env_repo}"* ]]
+then
+    printf "${RED}error:${NC} ${script_name} expected to be ran from root of the environment\n"
+    exit 1
+fi
+
+ENGINE_DOMAIN=${ENGINE_DOMAIN:="localhost:8080"}
+ENGINE_EMAIL=${ENGINE_EMAIL:="support@place.tech"}
+ENGINE_PASSWORD=${ENGINE_PASSWORD:="development"}
+RETHINKDB_HOST=${RETHINKDB_HOST:-"rethink"}
+
+printf "=== Pulling Backoffice..."
+git clone -b beta "https://github.com/placeos/www-core" "www" 2> /dev/null || git -C "www" pull
+
+printf "=== Pulling Drivers..."
+git clone "https://github.com/placeos/drivers" "drivers" 2> /dev/null || git -C "drivers" pull
+
+echo "=== Bringing up services..."
+./scripts/start-services "${SERVICES[@]}" || (printf "\nfailed to start services\n" && exit 1)
+
+printf "\n=== Waiting until auth container is up and running..."
+until $(curl --output /dev/null --silent --head http://$ENGINE_DOMAIN/auth/404); do
+    printf '.'
+    sleep 1
+done
+echo " done"
+
+echo -e "\n=== Initiating engine with default domain ($ENGINE_DOMAIN)..."
+./scripts/generate-minimal-entities.sh "$ENGINE_DOMAIN/backoffice" "$ENGINE_EMAIL" "$ENGINE_PASSWORD" || (printf "\nFailed to create user entity\n" && exit 1)
+
+sleep 1
+
+printf "=== Creating placeholder documents..."
+docker exec -it -e "RETHINKDB_HOST=$RETHINKDB_HOST" -w /play play \
+    crystal run sam.cr -- generate:documents 2> /dev/null \
+    && echo " done" || echo " failed"
+
+if [[ $setup_sentry == "true" ]]
+then
+    echo "=== Setting up sentry..."
+    ./scripts/setup-sentry.sh
+    echo -e "\n=== Sentry setup complete. Login to http://$ENGINE_DOMAIN on port 8989 with"
+    echo "support@place.tech:development"
+else
+    echo "=== To setup sentry, run \`./scripts/setup-sentry.sh\`"
+fi
+
+if [[ $setup_elastic_stack == "true" ]]
+then
+    ./scripts/start-elastic-stack.sh
+else
+    echo "=== To setup elastic stack run 'docker-compose up -d' in monitor-host directory."
+fi
+
+echo -e "\n=== Setup complete. Login to http://$ENGINE_DOMAIN/backoffice/ with"
+echo "$ENGINE_EMAIL:$ENGINE_PASSWORD"

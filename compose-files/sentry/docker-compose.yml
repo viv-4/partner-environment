@@ -1,0 +1,61 @@
+version: "3.7"
+services:
+
+  postgres:
+    image: postgres:alpine
+    restart: always
+    container_name: postgres
+    hostname: postgres
+    volumes:
+      - ./data/postgres-data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=sentry
+      - POSTGRES_PASSWORD=test
+      - TZ=$TZ
+
+  sentry:
+    image: sentry
+    restart: always
+    container_name: sentry
+    hostname: sentry
+    ports:
+      - 0.0.0.0:8989:9000
+    environment:
+      - TZ=$TZ
+      - SENTRY_SECRET_KEY='dev'
+      - SENTRY_POSTGRES_HOST=postgres
+      - SENTRY_DB_USER=sentry
+      - SENTRY_DB_PASSWORD=test
+      - SENTRY_REDIS_HOST=redis
+
+  sentry-cron:
+    image: sentry
+    restart: always
+    container_name: sentry-cron
+    hostname: sentry-cron
+    command: sentry run cron
+    depends_on:
+      - sentry
+    environment:
+      - TZ=$TZ
+      - SENTRY_SECRET_KEY='dev'
+      - SENTRY_POSTGRES_HOST=postgres
+      - SENTRY_DB_USER=sentry
+      - SENTRY_DB_PASSWORD=test
+      - SENTRY_REDIS_HOST=redis
+
+  sentry-worker:
+    image: sentry
+    restart: always
+    container_name: sentry-worker
+    hostname: sentry-worker
+    command: sentry run worker
+    depends_on:
+      - sentry
+    environment:
+      - TZ=$TZ
+      - SENTRY_SECRET_KEY='dev'
+      - SENTRY_POSTGRES_HOST=postgres
+      - SENTRY_DB_USER=sentry
+      - SENTRY_DB_PASSWORD=test
+      - SENTRY_REDIS_HOST=redis

@@ -1,0 +1,29 @@
+  es_host: elasticsearch
+  es_port: 9200
+
+  name: High RAM!
+
+  type: any
+  index: metricbeat-*
+
+  filter:
+  - query:
+      query_string: {query: '_exists_:system.memory.actual.used.pct'}
+  - range:
+      system.memory.actual.used.pct:
+        from: 0.8
+        to: 1
+
+  alert:
+    - "slack"
+
+  alert_text: "{0} -- {1} -- {2}"
+  alert_text_args: ["@timestamp", "host.name", "system.memory.actual.used.pct"]
+  alert_text_type: alert_text_only
+
+  slack:
+  slack_webhook_url: "https://hooks.slack.com/services/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"
+  slack_username_override: "Elastalert"
+  slack_emoji_override: "robot"
+  #slack_channel_override: "alerting"
+  slack_msg_color: "warning"

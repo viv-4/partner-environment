@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+
+set -eu
+
+COMPOSE_FILES=('-f ./docker-compose.yml')
+
+while [[ $# -gt 0 ]]
+do
+  arg="$1"
+  case $arg in
+    -e|--elk)
+    COMPOSE_FILES+=('-f ./compose-files/elk/docker-compose.yml')
+    shift
+    ;;
+    -s|--sentry)
+    COMPOSE_FILES+=('-f ./compose-files/sentry/docker-compose.yml')
+    shift
+    ;;
+  esac
+done
+
+docker-compose pull -q
+
+docker-compose ${COMPOSE_FILES[@]} up -d --force-recreate

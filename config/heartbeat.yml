@@ -1,0 +1,11 @@
+heartbeat.monitors:
+
+- type: http
+  schedule: '@every 5s'
+  id: /auth/authority
+  urls:
+    - https://nginx/auth/authority
+  ssl.verification_mode: none
+
+processors:
+  - add_cloud_metadata: ~

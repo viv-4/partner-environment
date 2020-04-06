@@ -1,0 +1,54 @@
+version: "3.7"
+services:
+
+  # Sends all container json-file logs to logstash on monitor-host
+  logspout:
+    image: vincit/logspout-gelf
+    hostname: $HOSTNAME
+    container_name: "logspout"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: gelf://$LOGSTASH_HOST:$LOGSTASH_PORT
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: 99m
+
+  # Gets metrics from host machine and send to elastic on monitor-host
+  metricbeat:
+    image: docker.elastic.co/beats/metricbeat-oss:$ELASTIC_VERSION
+    hostname: $HOSTNAME
+    container_name: "metricbeat"
+    user: root
+    volumes:
+      - /proc:/hostfs/proc:ro
+      - /sys/fs/cgroup:/hostfs/sys/fs/cgroup:ro
+      - /:/hostfs:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./config/metricbeat.yml:/usr/share/metricbeat/metricbeat.yml
+    cap_add:
+      - SYS_PTRACE
+      - DAC_READ_SEARCH
+    command: ["metricbeat", "-e", "--strict.perms=false", "-E", "output.elasticsearch.hosts=[$MONITOR_HOST:$ELASTIC_PORT]"]
+    restart: unless-stopped
+    tty: true
+    logging:
+      driver: json-file
+      options:
+        max-size: 99m
+
+  heartbeat:
+    image: docker.elastic.co/beats/heartbeat-oss:$ELASTIC_VERSION
+    hostname: $HOSTNAME
+    container_name: "heartbeat"
+    volumes:
+      - ./config/heartbeat.yml:/usr/share/heartbeat/heartbeat.yml
+    command: ["heartbeat", "-e", "--strict.perms=false", "-E", "output.elasticsearch.hosts=[$MONITOR_HOST:$ELASTIC_PORT]"]
+    restart: unless-stopped
+    tty: true
+    network_mode: aca-engine_default
+    logging:
+      driver: json-file
+      options:
+        max-size: 99m
