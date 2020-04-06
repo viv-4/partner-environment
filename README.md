@@ -66,5 +66,4 @@ When driver specs are run with debug symbols they are launched with `gdbserver` 
 - Rubbersoul (localhost:8084)
 - Elasticsearch (localhost:8090)
 - RethinkDB UI (localhost:8093)
-- Elasticsearch UI (localhost:8094)
 - Redis (localhost:7379) \[[UI available](https://redislabs.com/redisinsight/)\]

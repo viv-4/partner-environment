@@ -51,10 +51,10 @@ do
   esac
 done
 
-printf "=== Pulling Backoffice..."
+echo "=== Pulling Backoffice..."
 git clone -b beta "https://github.com/placeos/www-core" "www" 2> /dev/null || git -C "www" pull
 
-printf "=== Pulling Drivers..."
+echo "=== Pulling Drivers..."
 git clone "https://github.com/placeos/drivers" "drivers" 2> /dev/null || git -C "drivers" pull
 
 echo "=== Refreshing docker containers..."
