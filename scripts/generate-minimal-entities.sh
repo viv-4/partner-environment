@@ -6,7 +6,7 @@ ENGINE_EMAIL="$2"
 ENGINE_PASSWORD="$3"
 
 # Create an authority for built web app
-docker exec -it auth rake domain:add_authority[$ENGINE_DOMAIN,http://$ENGINE_DOMAIN,$ENGINE_EMAIL,$ENGINE_PASSWORD]
+docker exec -it auth rake domain:add_authority[$ENGINE_DOMAIN,http://$ENGINE_DOMAIN,$ENGINE_EMAIL,$ENGINE_PASSWORD] > /dev/null
 
 # Create application
-docker exec -it auth rake domain:add_app[backoffice,http://$ENGINE_DOMAIN]
+docker exec -it auth rake domain:add_app[backoffice,http://$ENGINE_DOMAIN] > /dev/null

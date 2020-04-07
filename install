@@ -13,7 +13,7 @@ Options:
 EOF
 )
 
-declare -a SERVICES
+SERVICES=('')
 
 setup_elastic_stack=false
 setup_sentry=false
@@ -38,6 +38,11 @@ do
   esac
 done
 
+ENGINE_DOMAIN=${ENGINE_DOMAIN:="localhost:8080"}
+ENGINE_EMAIL=${ENGINE_EMAIL:="support@place.tech"}
+ENGINE_PASSWORD=${ENGINE_PASSWORD:="development"}
+RETHINKDB_HOST=${RETHINKDB_HOST:-"rethink"}
+
 RED='\033[0;31m'
 NC='\033[0m'
 script_name="$(basename "${0}")"
@@ -49,11 +54,6 @@ then
     exit 1
 fi
 
-ENGINE_DOMAIN=${ENGINE_DOMAIN:="localhost:8080"}
-ENGINE_EMAIL=${ENGINE_EMAIL:="support@place.tech"}
-ENGINE_PASSWORD=${ENGINE_PASSWORD:="development"}
-RETHINKDB_HOST=${RETHINKDB_HOST:-"rethink"}
-
 echo "=== Pulling Backoffice..."
 git clone -b beta "https://github.com/placeos/www-core" "www" 2> /dev/null || git -C "www" pull
 
@@ -61,24 +61,23 @@ echo "=== Pulling Drivers..."
 git clone "https://github.com/placeos/drivers" "drivers" 2> /dev/null || git -C "drivers" pull
 
 echo "=== Bringing up services..."
-./scripts/start-services "${SERVICES[@]}" || (printf "\nfailed to start services\n" && exit 1)
+./scripts/start-services ${SERVICES[@]} || (printf "\nfailed to start services\n" && exit 1)
 
 printf "\n=== Waiting until auth container is up and running..."
 until $(curl --output /dev/null --silent --head http://$ENGINE_DOMAIN/auth/404); do
     printf '.'
-    sleep 1
+    sleep 0.5
 done
 echo " done"
 
-echo -e "\n=== Initiating engine with default domain ($ENGINE_DOMAIN)..."
-./scripts/generate-minimal-entities.sh "$ENGINE_DOMAIN/backoffice" "$ENGINE_EMAIL" "$ENGINE_PASSWORD" || (printf "\nFailed to create user entity\n" && exit 1)
-
-sleep 1
+printf "=== Initiating engine with default domain ($ENGINE_DOMAIN)..."
+./scripts/generate-minimal-entities.sh "$ENGINE_DOMAIN/backoffice" "$ENGINE_EMAIL" "$ENGINE_PASSWORD" \
+    && echo " done" || (printf "\nFailed to create user entity\n" && exit 1)
 
 printf "=== Creating placeholder documents..."
-docker exec -it -e "RETHINKDB_HOST=$RETHINKDB_HOST" -w /play play \
-    crystal run sam.cr -- generate:documents 2> /dev/null \
+docker exec -it -e "RETHINKDB_HOST=$RETHINKDB_HOST" -w /play play crystal run sam.cr -- generate:documents 2> /dev/null \
     && echo " done" || echo " failed"
+
 
 if [[ $setup_sentry == "true" ]]
 then
