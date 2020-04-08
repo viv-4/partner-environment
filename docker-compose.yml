@@ -88,7 +88,7 @@ services:
   # Support
 
   rubber-soul: # RethinkDB to Elasticsearch Service
-    image: placeos/rubber-soul
+    image: placeos/rubber-soul:v1.5.3
     restart: always
     container_name: rubber-soul
     hostname: rubber-soul
