@@ -176,34 +176,13 @@ services:
     container_name: rethink
     hostname: rethink
     ports:
-      #- 127.0.0.1:8093:8080
-      - 8093:8080
+      - 127.0.0.1:8093:8080
     volumes:
       - ./data/rethink-data:/data/rethinkdb_data/
     environment:
       - TZ=$TZ
 
   # Development Specific
-
-  drivers: # Rest API
-    image: placeos/drivers
-    restart: always
-    container_name: drivers
-    hostname: drivers
-    ports:
-      - 127.0.0.1:8085:8080
-      - 127.0.0.1:4444:4444
-    volumes:
-      - ./drivers/drivers/:/src/drivers/
-      - ./drivers/repositories/:/src/repositories/
-    environment:
-      - ENV=development
-      - ES_HOST=elastic
-      - REDIS_URL=redis://redis:6379
-      - RETHINKDB_DB=place_development
-      - RETHINKDB_HOST=rethink
-      - SG_ENV=development
-      - TZ=$TZ
 
   play: # Crystal Play
     # Spawn a play process in desired directory `docker exec --workdir=${PROJECT_PATH} play crystal -p ${port}`
