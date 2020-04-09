@@ -123,7 +123,7 @@ services:
     ports:
       - 127.0.0.1:8090:9200
     volumes:
-      - ./data/elastic-data:/usr/share/elasticsearch/data
+      - ./data/elastic-data:/usr/share/elasticsearch/data:Z
     environment:
       - TZ=$TZ
       - bootstrap.memory_lock=true
@@ -151,9 +151,9 @@ services:
       - 8080:80
       - 8443:443
     volumes:
-      - ./config/nginx/nginx-nossl.conf:/etc/nginx/nginx.conf:ro
-      - ./www/:/etc/nginx/html/:ro
-      - ./ssl/:/etc/nginx/ssl/:ro
+      - ./config/nginx/nginx-nossl.conf:/etc/nginx/nginx.conf:Z
+      - ./www/:/etc/nginx/html/:Z
+      - ./ssl/:/etc/nginx/ssl/:Z
     environment:
       - TZ=$TZ
 
@@ -165,8 +165,8 @@ services:
     ports:
       - 127.0.0.1:7379:6379
     volumes:
-      - ./data/redis-data:/data
-      - ./config/redis.conf:/usr/local/etc/redis/redis.conf
+      - ./data/redis-data:/data:Z
+      - ./config/redis.conf:/usr/local/etc/redis/redis.conf:Z
     environment:
       - TZ=$TZ
 
@@ -178,7 +178,7 @@ services:
     ports:
       - 127.0.0.1:8093:8080
     volumes:
-      - ./data/rethink-data:/data/rethinkdb_data/
+      - ./data/rethink-data:/data/rethinkdb_data/:Z
     environment:
       - TZ=$TZ
 
@@ -198,7 +198,7 @@ services:
       - 127.0.0.1:4022:22 # Expose SSH
     volumes:
       # Repositories to map in
-      - ./drivers:/placeos/drivers
+      - ./drivers:/placeos/drivers:Z
     environment:
       - CORE_URL=http://core:3000
       - ENV=development
