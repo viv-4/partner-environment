@@ -187,7 +187,7 @@ services:
   play: # Crystal Play
     # Spawn a play process in desired directory `docker exec --workdir=${PROJECT_PATH} play crystal -p ${port}`
     # Presently, a single play session starts in `working_dir`.
-    image: placeos/play
+    image: placeos/play:beta
     restart: always
     container_name: play
     hostname: play
