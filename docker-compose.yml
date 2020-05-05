@@ -59,7 +59,7 @@ services:
       - redis
       - rethink
     volumes:
-      - ./data/core-drivers:/app/bin/drivers
+      - ./data/core-drivers:/app/bin/drivers:Z
     environment:
       - ENV=development
       - ETCD_HOST=etcd
