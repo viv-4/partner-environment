@@ -57,12 +57,6 @@ then
     exit 1
 fi
 
-echo "=== Pulling Backoffice..."
-git clone -b beta "https://github.com/placeos/www-core" "www" 2> /dev/null || git -C "www" pull
-
-echo "=== Pulling Drivers..."
-git clone "https://github.com/placeos/drivers" "drivers" 2> /dev/null || git -C "drivers" pull
-
 echo "=== Refreshing services..."
 ./scripts/start-services ${SERVICES[@]} || (printf "\nfailed to start services\n" && exit 1)
 

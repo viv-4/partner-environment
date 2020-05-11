@@ -63,6 +63,7 @@ When driver specs are run with debug symbols they are launched with `gdbserver` 
 - Place Rest API (localhost:8082)
 - Place Auth (localhost:8081)
 - Place Core (localhost:8083)
+- Place Frontends (localhost:8087)
 - Rubbersoul (localhost:8084)
 - Elasticsearch (localhost:8090)
 - RethinkDB UI (localhost:8093)

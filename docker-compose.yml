@@ -1,4 +1,8 @@
 version: "3.7"
+
+volumes:
+  www:
+
 services:
 
   # Services
@@ -66,6 +70,27 @@ services:
       - CORE_HOST=core
       - CORE_PORT=3000
       - REDIS_URL=redis://redis:6379
+      - RETHINKDB_DB=place_development
+      - RETHINKDB_HOST=rethink
+      - SG_ENV=development
+      - TZ=$TZ
+
+  frontends: # Frontend deployment service
+    image: placeos/frontends
+    restart: always
+    container_name: frontends
+    hostname: frontends
+    ports:
+      - 127.0.0.1:8087:3000
+    volumes:
+      - type: volume
+        source: www
+        target: /app/www
+    depends_on:
+      - rethink
+    environment:
+      - ENV=development
+      - PLACE_LOADER_WWW=www
       - RETHINKDB_DB=place_development
       - RETHINKDB_HOST=rethink
       - SG_ENV=development
@@ -154,8 +179,11 @@ services:
       - 8443:443
     volumes:
       - ./config/nginx/nginx-nossl.conf:/etc/nginx/nginx.conf:Z
-      - ./www/:/etc/nginx/html/:Z
       - ./ssl/:/etc/nginx/ssl/:Z
+      - type: volume
+        source: www
+        target: /etc/nginx/html/
+        read_only: true
     environment:
       - TZ=$TZ
 
@@ -198,9 +226,6 @@ services:
     ports:
       - 127.0.0.1:4040-4060:4040-4060 # Expose a range of ports for ssh
       - 127.0.0.1:4022:22 # Expose SSH
-    volumes:
-      # Repositories to map in
-      - ./drivers:/placeos/drivers:Z
     environment:
       - CORE_URL=http://core:3000
       - ENV=development
