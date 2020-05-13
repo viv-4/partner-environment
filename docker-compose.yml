@@ -1,5 +1,9 @@
 version: "3.7"
 
+networks:
+  placeos:
+    name: placeos
+
 volumes:
   www:
 
@@ -14,6 +18,8 @@ services:
     hostname: api
     ports:
       - 127.0.0.1:8082:3000
+    networks:
+      - placeos
     depends_on:
       - auth
       - elastic
@@ -23,6 +29,7 @@ services:
       - rubber-soul
     environment:
       - CORE_URL=http://core:3000
+      - PLACE_LOADER_URI=http://frontends:3000
       - ENV=development
       - ES_HOST=elastic
       - ETCD_HOST=etcd
@@ -35,14 +42,14 @@ services:
       # - JWT_SECRET=$SECRET_KEY_BASE
 
   auth: # Authentication Service
-    image: placeos/auth
+    image: placeos/auth:beta
     restart: always
     container_name: auth
     hostname: auth
     ports:
       - 127.0.0.1:8081:8080
-    # volumes:
-    #   - ./placeos/services/auth/:/app/:ro
+    networks:
+      - placeos
     depends_on:
       - rethink
     environment:
@@ -58,6 +65,8 @@ services:
     hostname: core
     ports:
       - 127.0.0.1:8083:3000
+    networks:
+      - placeos
     depends_on:
       - etcd
       - redis
@@ -76,12 +85,14 @@ services:
       - TZ=$TZ
 
   frontends: # Frontend deployment service
-    image: placeos/frontends
+    image: placeos/frontends:beta
     restart: always
     container_name: frontends
     hostname: frontends
     ports:
       - 127.0.0.1:8087:3000
+    networks:
+      - placeos
     volumes:
       - type: volume
         source: www
@@ -101,6 +112,8 @@ services:
     restart: always
     container_name: triggers
     hostname: triggers
+    networks:
+      - placeos
     depends_on:
       - redis
       - rethink
@@ -114,13 +127,36 @@ services:
 
   # Support
 
+  init: # Idempotent initializer
+    image: placeos/init:beta
+    container_name: init
+    restart: on-failure
+    networks:
+      - placeos
+    depends_on:
+      - rubber-soul
+    environment:
+      - ENV=development
+      - ES_HOST=elastic
+      - RETHINKDB_HOST=rethink
+      - RETHINKDB_DB=place_development
+      - PLACE_DOMAIN=localhost:8080
+      - PLACE_APPLICATION=backoffice
+      - PLACE_AUTH_HOST=auth:8080
+      - PLACE_USERNAME=Place Support (localhost:8080)
+      - PLACE_EMAIL=support@place.tech
+      - PLACE_PASSWORD=development
+      - TZ=$TZ
+
   rubber-soul: # RethinkDB to Elasticsearch Service
-    image: placeos/rubber-soul:v1.5.3
+    image: placeos/rubber-soul:beta
     restart: always
     container_name: rubber-soul
     hostname: rubber-soul
     ports:
       - 127.0.0.1:8084:3000
+    networks:
+      - placeos
     depends_on:
       - elastic
       - rethink
@@ -137,6 +173,8 @@ services:
     hostname: dispatch
     ports:
       - 127.0.0.1:8086:8080
+    networks:
+      - placeos
     environment:
       - SERVER_SECRET=development
 
@@ -149,6 +187,8 @@ services:
     hostname: elastic
     ports:
       - 127.0.0.1:8090:9200
+    networks:
+      - placeos
     volumes:
       - ./data/elastic-data:/usr/share/elasticsearch/data:Z
     environment:
@@ -165,6 +205,8 @@ services:
     ports:
       - 127.0.0.1:8091:2379
       - 127.0.0.1:8092:2380
+    networks:
+      - placeos
     environment:
       - ALLOW_NONE_AUTHENTICATION=yes
       - TZ=$TZ
@@ -177,6 +219,11 @@ services:
     ports:
       - 8080:80
       - 8443:443
+    networks:
+      - placeos
+    depends_on:
+      - auth
+      - api
     volumes:
       - ./config/nginx/nginx-nossl.conf:/etc/nginx/nginx.conf:Z
       - ./ssl/:/etc/nginx/ssl/:Z
@@ -194,6 +241,8 @@ services:
     hostname: redis
     ports:
       - 127.0.0.1:7379:6379
+    networks:
+      - placeos
     volumes:
       - ./data/redis-data:/data:Z
       - ./config/redis.conf:/usr/local/etc/redis/redis.conf:Z
@@ -207,32 +256,9 @@ services:
     hostname: rethink
     ports:
       - 127.0.0.1:8093:8080
+    networks:
+      - placeos
     volumes:
       - ./data/rethink-data:/data/rethinkdb_data/:Z
     environment:
-      - TZ=$TZ
-
-  # Development Specific
-
-  play: # Crystal Play
-    # Spawn a play process in desired directory `docker exec --workdir=${PROJECT_PATH} play crystal -p ${port}`
-    # Presently, a single play session starts in `working_dir`.
-    image: placeos/play:beta
-    restart: always
-    container_name: play
-    hostname: play
-    working_dir: /placeos/core
-    entrypoint: crystal play -b 0.0.0.0 -p 4040
-    ports:
-      - 127.0.0.1:4040-4060:4040-4060 # Expose a range of ports for ssh
-      - 127.0.0.1:4022:22 # Expose SSH
-    environment:
-      - CORE_URL=http://core:3000
-      - ENV=development
-      - ES_HOST=elastic
-      - ETCD_HOST=etcd
-      - REDIS_URL=redis://redis:6379
-      - RETHINKDB_DB=place_development
-      - RETHINKDB_HOST=rethink
-      - SG_ENV=development
       - TZ=$TZ

@@ -2,6 +2,17 @@
 set -eu
 trap "exit" 2
 
+RED='\033[0;31m'
+NC='\033[0m'
+script_name="$(basename "${0}")"
+env_repo="partner-environment"
+current_repo="$(basename "$(git --git-dir="./.git" remote get-url origin 2> /dev/null)")"
+if [[ "${current_repo}" != "${env_repo}"* ]]
+then
+    printf "${RED}error:${NC} ${script_name} expected to be ran from root of the environment\n"
+    exit 1
+fi
+
 HELP=$(cat <<EOF
 Usage: ./restart [options]
 
@@ -40,46 +51,33 @@ do
   esac
 done
 
-ENGINE_DOMAIN=${ENGINE_DOMAIN:="localhost:8080"}
-ENGINE_EMAIL=${ENGINE_EMAIL:="support@place.tech"}
-ENGINE_PASSWORD=${ENGINE_PASSWORD:="development"}
-RETHINKDB_HOST=${RETHINKDB_HOST:-"rethink"}
-ELASTIC_HOST=${ES_HOST:-"elastic"}
-
-RED='\033[0;31m'
-NC='\033[0m'
-script_name="$(basename "${0}")"
-env_repo="partner-environment"
-current_repo="$(basename "$(git --git-dir="./.git" remote get-url origin 2> /dev/null)")"
-if [[ "${current_repo}" != "${env_repo}"* ]]
-then
-    printf "${RED}error:${NC} ${script_name} expected to be ran from root of the environment\n"
-    exit 1
-fi
+PLACE_DOMAIN=${PLACE_DOMAIN:="localhost:8080"}
+PLACE_EMAIL=${PLACE_EMAIL:="support@place.tech"}
+PLACE_PASSWORD=${PLACE_PASSWORD:="development"}
 
 echo "=== Refreshing services..."
 ./scripts/start-services ${SERVICES[@]} || (printf "\nfailed to start services\n" && exit 1)
 
 if [[ $reset_environment == "true" ]]
 then
+    printf "\n=== Waiting for RethinkDB and Elasticsearch..."
+    sleep 10
+    echo "done"
+
     printf "\n=== Dropping tables..."
-    until $(docker exec -w /play play crystal run sam.cr -- drop:db -host="$RETHINKDB_HOST" @ drop:elastic -host="$ELASTIC_HOST" &> /dev/null)
-    do
-        printf '.'
-        sleep 0.5
-    done
+    COMPOSE_PROJECT_NAME=placeos docker-compose run --rm --no-deps init make sam drop:db &> /dev/null \
+         ||  (printf "\nFailed to drop tables\n" && exit 1)
+    echo " done"
+    printf "\n=== Dropping elastic..."
+    COMPOSE_PROJECT_NAME=placeos docker-compose run --rm --no-deps init make sam drop:elastic &> /dev/null \
+         ||  (printf "\nFailed to drop elastic indices\n" && exit 1)
     echo " done"
 
-    printf "=== Initiating engine with default domain ($ENGINE_DOMAIN)..."
-    ./scripts/generate-minimal-entities.sh "$ENGINE_DOMAIN/backoffice" "$ENGINE_EMAIL" "$ENGINE_PASSWORD" \
-        && echo " done" || (printf "\nFailed to create user entity\n" && exit 1)
+    echo "=== Initiating PlaceOS with default domain ($PLACE_DOMAIN)..."
+    ./scripts/run-init-container ||  (printf "\nFailed to create user entity\n" && exit 1)
 
-    printf "=== Creating placeholder documents..."
-     docker exec -it -e "RETHINKDB_HOST=$RETHINKDB_HOST" -w /play play crystal run sam.cr -- generate:documents 2> /dev/null \
-        && echo " done" || echo " failed"
-
-    docker-compose restart nginx
+    COMPOSE_PROJECT_NAME=placeos docker-compose restart nginx
 fi
 
-echo -e "\n\n=== Restart complete. Login to http://$ENGINE_DOMAIN/backoffice/ with"
-echo "$ENGINE_EMAIL:$ENGINE_PASSWORD"
+echo -e "\n=== Restart complete. Login to http://$PLACE_DOMAIN/backoffice/ with"
+echo "$PLACE_EMAIL:$PLACE_PASSWORD"
