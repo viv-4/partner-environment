@@ -65,12 +65,11 @@ then
     echo "done"
 
     printf "\n=== Dropping tables..."
-    COMPOSE_PROJECT_NAME=placeos docker-compose run --rm --no-deps init make sam drop:db &> /dev/null \
-         ||  (printf "\nFailed to drop tables\n" && exit 1)
+    ./scripts/run-sam-task drop:db &> /dev/null || (printf "\nFailed to drop tables\n" && exit 1)
     echo " done"
+
     printf "\n=== Dropping elastic..."
-    COMPOSE_PROJECT_NAME=placeos docker-compose run --rm --no-deps init make sam drop:elastic &> /dev/null \
-         ||  (printf "\nFailed to drop elastic indices\n" && exit 1)
+    ./scripts/run-sam-task drop:elastic &> /dev/null ||  (printf "\nFailed to drop elastic indices\n" && exit 1)
     echo " done"
 
     echo "=== Initiating PlaceOS with default domain ($PLACE_DOMAIN)..."

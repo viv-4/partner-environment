@@ -7,12 +7,40 @@ networks:
 volumes:
   www:
 
+# YAML Anchors
+
+x-deployment-env:
+  &deployment-env
+  ENV: ${ENV:-development}
+  SG_ENV: ${SG_ENV:-development}
+  TZ: $TZ
+
+x-elastic-client-env:
+  &elastic-client-env
+  ES_HOST: ${ELASTIC_HOST:-elastic}
+  ES_PORT: ${ELASTIC_PORT:-9200}
+
+x-etcd-client-env:
+  &etcd-client-env
+  ETCD_HOST: ${ETCD_HOST:-etcd}
+  ETCD_PORT: ${ETCD_PORT:-2379}
+
+x-redis-client-env:
+  &redis-client-env
+  REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+
+x-rethinkdb-client-env:
+  &rethinkdb-client-env
+  RETHINKDB_HOST: ${RETHINKDB_HOST:-rethink}
+  RETHINKDB_PORT: ${RETHINKDB_PORT:-28015}
+  RETHINKDB_DB: ${RETHINKDB_DB:-place_development}
+
 services:
 
   # Services
 
   api: # Rest API
-    image: placeos/rest-api:beta
+    image: placeos/rest-api:${PLACE_REST_API_TAG:-latest}
     restart: always
     container_name: api
     hostname: api
@@ -28,21 +56,19 @@ services:
       - rethink
       - rubber-soul
     environment:
-      - CORE_URL=http://core:3000
-      - PLACE_LOADER_URI=http://frontends:3000
-      - ENV=development
-      - ES_HOST=elastic
-      - ETCD_HOST=etcd
-      - REDIS_URL=redis://redis:6379
-      - RETHINKDB_DB=place_development
-      - RETHINKDB_HOST=rethink
-      - SG_ENV=development
-      - TZ=$TZ
-      # - PLACE_SECRET=$PLACE_SECRET
+      # Environment
+      << : *deployment-env
+      # - PLACE_SERVER_SECRET=$PLACE_SECRET
       # - JWT_SECRET=$SECRET_KEY_BASE
+      # Service Hosts
+      PLACE_LOADER_URI: ${PLACE_LOADER_URI:-http://frontends:3000}
+      << : *elastic-client-env
+      << : *etcd-client-env
+      << : *redis-client-env
+      << : *rethinkdb-client-env
 
   auth: # Authentication Service
-    image: placeos/auth:beta
+    image: placeos/auth:${PLACE_AUTH_TAG:-latest}
     restart: always
     container_name: auth
     hostname: auth
@@ -53,13 +79,12 @@ services:
     depends_on:
       - rethink
     environment:
-      - RETHINKDB_DB=place_development
-      - RETHINKDB_HOST=rethink
-      - COAUTH_NO_SSL=true
-      - TZ=$TZ
+      << : *rethinkdb-client-env
+      COAUTH_NO_SSL: "true"
+      TZ: $TZ
 
   core: # Module coordinator
-    image: placeos/core:beta
+    image: placeos/core:${PLACE_CORE_TAG:-latest}
     restart: always
     container_name: core
     hostname: core
@@ -74,18 +99,15 @@ services:
     volumes:
       - ./data/core-drivers:/app/bin/drivers:Z
     environment:
-      - ENV=development
-      - ETCD_HOST=etcd
-      - CORE_HOST=core
-      - CORE_PORT=3000
-      - REDIS_URL=redis://redis:6379
-      - RETHINKDB_DB=place_development
-      - RETHINKDB_HOST=rethink
-      - SG_ENV=development
-      - TZ=$TZ
+      # Service Hosts
+      << : *etcd-client-env
+      << : *redis-client-env
+      << : *rethinkdb-client-env
+      # Environment
+      << : *deployment-env
 
   frontends: # Frontend deployment service
-    image: placeos/frontends:beta
+    image: placeos/frontends:${PLACE_FRONTENDS_TAG:-latest}
     restart: always
     container_name: frontends
     hostname: frontends
@@ -100,15 +122,13 @@ services:
     depends_on:
       - rethink
     environment:
-      - ENV=development
-      - PLACE_LOADER_WWW=www
-      - RETHINKDB_DB=place_development
-      - RETHINKDB_HOST=rethink
-      - SG_ENV=development
-      - TZ=$TZ
+      PLACE_LOADER_WWW: www
+      << : *rethinkdb-client-env
+      # Environment
+      << : *deployment-env
 
   triggers: # Conditional execution service
-    image: placeos/triggers
+    image: placeos/triggers:${PLACE_TRIGGERS_TAG:-latest}
     restart: always
     container_name: triggers
     hostname: triggers
@@ -118,17 +138,16 @@ services:
       - redis
       - rethink
     environment:
-      - ENV=development
-      - REDIS_URL=redis://redis:6379
-      - RETHINKDB_DB=place_development
-      - RETHINKDB_HOST=rethink
-      - SG_ENV=development
-      - TZ=$TZ
+      # Service Hosts
+      << : *redis-client-env
+      << : *rethinkdb-client-env
+      # Environment
+      << : *deployment-env
 
   # Support
 
-  init: # Idempotent initializer
-    image: placeos/init:beta
+  init:
+    image: placeos/init:${PLACE_INIT_TAG:-latest}
     container_name: init
     restart: on-failure
     networks:
@@ -136,20 +155,21 @@ services:
     depends_on:
       - rubber-soul
     environment:
-      - ENV=development
-      - ES_HOST=elastic
-      - RETHINKDB_HOST=rethink
-      - RETHINKDB_DB=place_development
-      - PLACE_DOMAIN=localhost:8080
-      - PLACE_APPLICATION=backoffice
-      - PLACE_AUTH_HOST=auth:8080
-      - PLACE_USERNAME=Place Support (localhost:8080)
-      - PLACE_EMAIL=support@place.tech
-      - PLACE_PASSWORD=development
-      - TZ=$TZ
+      # User/Application Configuration
+      PLACE_DOMAIN: ${PLACE_DOMAIN:-localhost:8080}
+      PLACE_APPLICATION: ${PLACE_APPLICATION:-backoffice}
+      PLACE_AUTH_HOST: ${PLACE_AUTH_HOST:-auth:8080}
+      PLACE_USERNAME: ${PLACE_USERNAME:-Place Support (localhost:8080)}
+      PLACE_EMAIL: ${PLACE_EMAIL:-support@place.tech}
+      PLACE_PASSWORD: ${PLACE_PASSWORD:-development}
+      # Service Hosts
+      << : *rethinkdb-client-env
+      << : *elastic-client-env
+      # Environment
+      << : *deployment-env
 
   rubber-soul: # RethinkDB to Elasticsearch Service
-    image: placeos/rubber-soul:beta
+    image: placeos/rubber-soul:${PLACE_RUBBER_SOUL_TAG:-latest}
     restart: always
     container_name: rubber-soul
     hostname: rubber-soul
@@ -161,13 +181,14 @@ services:
       - elastic
       - rethink
     environment:
-      - ES_HOST=elastic
-      - RETHINKDB_DB=place_development
-      - RETHINKDB_HOST=rethink
-      - TZ=$TZ
+      # Service Hosts
+      << : *rethinkdb-client-env
+      << : *elastic-client-env
+      # Environment
+      << : *deployment-env
 
   dispatch: # Engine driver server registration and data routing
-    image: placeos/dispatch
+    image: placeos/dispatch:${PLACE_DISPATCH_TAG:-latest}
     restart: always
     container_name: dispatch
     hostname: dispatch
@@ -176,12 +197,12 @@ services:
     networks:
       - placeos
     environment:
-      - SERVER_SECRET=development
+      SERVER_SECRET: ${PLACE_SERVER_SECRET:-development}
 
   # Resources
 
   elastic:
-    image: blacktop/elasticsearch:7.6
+    image: blacktop/elasticsearch:${ELASTIC_VERSION:-7.6}
     restart: always
     container_name: elastic
     hostname: elastic
@@ -192,13 +213,13 @@ services:
     volumes:
       - ./data/elastic-data:/usr/share/elasticsearch/data:Z
     environment:
-      - TZ=$TZ
-      - bootstrap.memory_lock=true
-      - cluster.routing.allocation.disk.threshold_enabled=false
-      - discovery.type=single-node
+      bootstrap.memory_lock: "true"
+      cluster.routing.allocation.disk.threshold_enabled: "false"
+      discovery.type: single-node
+      TZ: $TZ
 
   etcd:
-    image: bitnami/etcd:3.3.13
+    image: bitnami/etcd:${ETCD_VERSION:-3.3.13}
     restart: always
     container_name: etcd
     hostname: etcd
@@ -208,8 +229,8 @@ services:
     networks:
       - placeos
     environment:
-      - ALLOW_NONE_AUTHENTICATION=yes
-      - TZ=$TZ
+      ALLOW_NONE_AUTHENTICATION: "yes"
+      TZ: $TZ
 
   nginx:
     image: yobasystems/alpine-nginx
@@ -232,7 +253,7 @@ services:
         target: /etc/nginx/html/
         read_only: true
     environment:
-      - TZ=$TZ
+      TZ: $TZ
 
   redis:
     image: eqalpha/keydb
@@ -247,10 +268,10 @@ services:
       - ./data/redis-data:/data:Z
       - ./config/redis.conf:/usr/local/etc/redis/redis.conf:Z
     environment:
-      - TZ=$TZ
+      TZ: $TZ
 
   rethink:
-    image: rethinkdb:2.4
+    image: rethinkdb:${RETHINKDB_VERSION:-2.4}
     restart: always
     container_name: rethink
     hostname: rethink
@@ -261,4 +282,4 @@ services:
     volumes:
       - ./data/rethink-data:/data/rethinkdb_data/:Z
     environment:
-      - TZ=$TZ
+      TZ: $TZ
