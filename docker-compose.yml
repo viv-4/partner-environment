@@ -35,6 +35,14 @@ x-rethinkdb-client-env:
   RETHINKDB_PORT: ${RETHINKDB_PORT:-28015}
   RETHINKDB_DB: ${RETHINKDB_DB:-place_development}
 
+x-smtp-client-env:
+  &smtp-client-env
+  SMTP_SERVER: ${SMTP_SERVER}
+  SMTP_PORT: ${SMTP_PORT:-587}
+  SMTP_USER: ${SMTP_USER}      # username if required, will not authenticate if blank
+  SMTP_PASS: ${SMTP_PASS}      # password if required
+  SMTP_SECURE: ${SMTP_SECURE}  # blank for unsecure, `SMTPS` for TLS, `STARTTLS` for negotiating TLS on unsecure connection
+
 services:
 
   # Services
@@ -143,6 +151,7 @@ services:
       << : *etcd-client-env
       << : *redis-client-env
       << : *rethinkdb-client-env
+      << : *smtp-client-env
       # Environment
       << : *deployment-env
 
