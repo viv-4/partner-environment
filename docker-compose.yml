@@ -135,10 +135,12 @@ services:
     networks:
       - placeos
     depends_on:
+      - etcd
       - redis
       - rethink
     environment:
       # Service Hosts
+      << : *etcd-client-env
       << : *redis-client-env
       << : *rethinkdb-client-env
       # Environment
