@@ -49,9 +49,15 @@ do
   esac
 done
 
-PLACE_DOMAIN=${PLACE_DOMAIN:="localhost:8080"}
+source .env
+PLACE_DOMAIN=${PLACE_DOMAIN:="localhost:8443"}
 PLACE_EMAIL=${PLACE_EMAIL:="support@place.tech"}
 PLACE_PASSWORD=${PLACE_PASSWORD:="development"}
+
+if [ ! -f ./ssl/default-domain/fullchain.pem ]; then
+  echo "=== Generating SSL certificates..."
+  ./scripts/generate-ssl ${PLACE_DOMAIN} 2> /dev/null || (printf "\nfailed to generate SSL certificates\n" && exit 1)
+fi
 
 echo "=== Bringing up services..."
 ./scripts/start-services ${SERVICES[@]} || (printf "\nfailed to start services\n" && exit 1)
@@ -76,5 +82,5 @@ fi
 echo "=== Running init container"
 ./scripts/run-init-container
 
-echo -e "\n=== Setup complete. Login to http://$PLACE_DOMAIN/backoffice/ with"
+echo -e "\n=== Setup complete. Login to https://$PLACE_DOMAIN/backoffice/ with"
 echo "$PLACE_EMAIL:$PLACE_PASSWORD"

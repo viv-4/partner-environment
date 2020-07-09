@@ -177,9 +177,10 @@ services:
       PLACE_DOMAIN: ${PLACE_DOMAIN:-localhost:8080}
       PLACE_APPLICATION: ${PLACE_APPLICATION:-backoffice}
       PLACE_AUTH_HOST: ${PLACE_AUTH_HOST:-auth:8080}
-      PLACE_USERNAME: ${PLACE_USERNAME:-Place Support (localhost:8080)}
+      PLACE_USERNAME: ${PLACE_USERNAME:-Place Support (localhost:8443)}
       PLACE_EMAIL: ${PLACE_EMAIL:-support@place.tech}
       PLACE_PASSWORD: ${PLACE_PASSWORD:-development}
+      PLACE_TLS: ${PLACE_TLS:-true}
       # Service Hosts
       << : *rethinkdb-client-env
       << : *elastic-client-env
@@ -264,7 +265,7 @@ services:
       - auth
       - api
     volumes:
-      - ./config/nginx/nginx-nossl.conf:/etc/nginx/nginx.conf:Z
+      - ./config/nginx/nginx.conf:/etc/nginx/nginx.conf:Z
       - ./ssl/:/etc/nginx/ssl/:Z
       - type: volume
         source: www
