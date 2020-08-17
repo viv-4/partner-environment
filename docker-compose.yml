@@ -185,7 +185,7 @@ services:
       - rubber-soul
     environment:
       # User/Application Configuration
-      PLACE_DOMAIN: ${PLACE_DOMAIN:-localhost:8080}
+      PLACE_DOMAIN: ${PLACE_DOMAIN:-localhost:8443}
       PLACE_APPLICATION: ${PLACE_APPLICATION:-backoffice}
       PLACE_AUTH_HOST: ${PLACE_AUTH_HOST:-auth:8080}
       PLACE_USERNAME: ${PLACE_USERNAME:-Place Support (localhost:8443)}

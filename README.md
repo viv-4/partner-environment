@@ -8,7 +8,14 @@ When finished dev work for the day, stop the containers with `docker-compose dow
 
 ## Installation
 
-`$ ./install`
+1. `$ ./install`
+1. Navigate to https://localhost:8443/backoffice
+1. Login with `support@place.tech`:`development`
+
+## Configuration
+
+- `PLACE_EMAIL`,`PLACE_PASSWORD`: Create an initial admin user via these environment variables
+- `PLACE_DOMAIN`: Set an alternate application domain, defaults to `localhost:8443`
 
 ### Dependencies
 
