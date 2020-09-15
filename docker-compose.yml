@@ -14,42 +14,42 @@ volumes:
 
 # YAML Anchors
 
-x-deployment-env:
-  &deployment-env
+x-deployment-env: &deployment-env
   ENV: ${ENV:-development}
   SG_ENV: ${SG_ENV:-development}
   TZ: $TZ
 
-x-elastic-client-env:
-  &elastic-client-env
+x-elastic-client-env: &elastic-client-env
   ES_HOST: ${ELASTIC_HOST:-elastic}
   ES_PORT: ${ELASTIC_PORT:-9200}
 
-x-etcd-client-env:
-  &etcd-client-env
+x-etcd-client-env: &etcd-client-env
   ETCD_HOST: ${ETCD_HOST:-etcd}
   ETCD_PORT: ${ETCD_PORT:-2379}
 
-x-place-loader-client-env:
-  &place-loader-client-env
+x-influxdb-api-key: &influxdb-api-key
+  env_file: .env.influxdb
+
+x-influxdb-client-env: &influxdb-client-env
+  INFLUX_BUCKET: ${INFLUX_BUCKET:-place}
+  INFLUX_HOST: ${INFLUX_HOST:-influxdb}
+  INFLUX_ORG: ${INFLUX_ORG:-PlaceOS}
+
+x-place-loader-client-env: &place-loader-client-env
   PLACE_LOADER_URI: ${PLACE_LOADER_URI:-http://frontends:3000}
 
-x-redis-client-env:
-  &redis-client-env
+x-redis-client-env: &redis-client-env
   REDIS_URL: ${REDIS_URL:-redis://redis:6379}
 
-x-rethinkdb-client-env:
-  &rethinkdb-client-env
+x-rethinkdb-client-env: &rethinkdb-client-env
   RETHINKDB_HOST: ${RETHINKDB_HOST:-rethink}
   RETHINKDB_PORT: ${RETHINKDB_PORT:-28015}
   RETHINKDB_DB: ${RETHINKDB_DB:-place_development}
 
-x-rubber-soul-client-env:
-  &rubber-soul-client-env
+x-rubber-soul-client-env: &rubber-soul-client-env
   RUBBER_SOUL_URI: ${RUBBER_SOUL_URI:-http://rubber-soul:3000}
 
-x-smtp-client-env:
-  &smtp-client-env
+x-smtp-client-env: &smtp-client-env
   SMTP_SERVER: ${SMTP_SERVER}
   SMTP_PORT: ${SMTP_PORT:-587}
   SMTP_USER: ${SMTP_USER}      # username if required, will not authenticate if blank
@@ -151,11 +151,35 @@ services:
       # Environment
       << : *deployment-env
 
+  source:
+    image: docker.io/placeos/source:${PLACE_SOURCE_TAG:-latest}
+    restart: always
+    container_name: source
+    ports:
+      - 127.0.0.1:8089:3000
+    networks:
+      placeos:
+        ipv4_address: 172.31.231.15
+    depends_on:
+      - redis
+      - rethink
+      - influxdb
+    << : *influxdb-api-key
+    environment:
+      # Service Hosts
+      << : *influxdb-client-env
+      << : *redis-client-env
+      << : *rethinkdb-client-env
+      # Environment
+      << : *deployment-env
+
   triggers: # Conditional execution service
     image: placeos/triggers:${PLACE_TRIGGERS_TAG:-latest}
     restart: always
     container_name: triggers
     hostname: triggers
+    ports:
+      - 127.0.0.1:8088:3000
     networks:
       placeos:
         ipv4_address: 172.31.231.6
@@ -265,6 +289,22 @@ services:
     environment:
       ALLOW_NONE_AUTHENTICATION: "yes"
       TZ: $TZ
+
+  influxdb:
+    image: quay.io/influxdb/influxdb:${INFLUXDB_IMAGE_TAG-2.0.0-beta}
+    container_name: influx
+    restart: always
+    networks:
+      placeos:
+        ipv4_address: 172.31.231.16
+    ports:
+      - 127.0.0.1:9999:9999
+    hostname: influx
+    healthcheck:
+      test: influx bucket list
+    volumes:
+      - ./data/influx-data:/root/.influxdbv2
+    command: "--reporting-disabled"
 
   nginx:
     image: yobasystems/alpine-nginx

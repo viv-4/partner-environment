@@ -2,3 +2,5 @@ drivers
 www
 data
 ssl
+
+.env.*

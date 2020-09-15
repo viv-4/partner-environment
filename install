@@ -62,6 +62,9 @@ fi
 echo "=== Bringing up services..."
 ./scripts/start-services ${SERVICES[@]} || (printf "\nfailed to start services\n" && exit 1)
 
+echo "=== Configuring InfluxDB..."
+./scripts/init-influxdb
+
 if [[ $setup_sentry == "true" ]]
 then
     echo "=== Setting up sentry..."
@@ -78,6 +81,8 @@ then
 else
     echo "=== To setup elastic stack run 'docker-compose up -d' in monitor-host directory."
 fi
+
+sleep 5
 
 echo "=== Running init container"
 ./scripts/run-init-container
