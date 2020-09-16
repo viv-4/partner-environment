@@ -59,6 +59,9 @@ if [ ! -f ./ssl/default-domain/fullchain.pem ]; then
   ./scripts/generate-ssl ${PLACE_DOMAIN} 2> /dev/null || (printf "\nfailed to generate SSL certificates\n" && exit 1)
 fi
 
+echo "=== Generating JWT secrets..."
+./scripts/generate-secrets
+
 echo "=== Bringing up services..."
 ./scripts/start-services ${SERVICES[@]} || (printf "\nfailed to start services\n" && exit 1)
 
