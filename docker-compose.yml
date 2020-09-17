@@ -327,8 +327,8 @@ services:
       - auth
       - api
     volumes:
-      - ./config/nginx/nginx.conf:/etc/nginx/nginx.conf:Z
-      - ./config/nginx/bearer.lua:/etc/nginx/bearer.lua:Z
+      - ./config/nginx/nginx.conf:/nginx.conf:Z
+      - ./config/nginx/bearer.lua:/bearer.lua:Z
       - ./ssl/:/etc/nginx/ssl/:Z
       - type: volume
         source: www
