@@ -80,6 +80,9 @@ services:
       - redis
       - rethink
       - rubber-soul
+    env_file:
+      - *jwt-public
+      - *jwt-secret
     environment:
       # Environment
       << : *deployment-env
