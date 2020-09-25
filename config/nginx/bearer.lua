@@ -53,4 +53,4 @@ end
 -- optionally set Authorization header Bearer token style regardless of how token received
 -- if you want to forward it by setting your nginx.conf something like:
 --     proxy_set_header Authorization $http_authorization;`
-ngx.req.set_header("Authorization", "Bearer " .. token)
+-- ngx.req.set_header("Authorization", "Bearer " .. token)
