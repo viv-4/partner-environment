@@ -3,7 +3,6 @@
 set -e
 
 instance="influx"
-config_location="/root/.influxdbv2/configs"
 
 influx_key_env=".env.influxdb"
 env=".env"
@@ -24,27 +23,18 @@ org="${INFLUX_ORG:-PlaceOS}"
 bucket="${INFLUX_BUCKET:-place}"
 retention="${INFLUX_RETENTION:-4w}"
 
-if [[ -z "${INFLUX_API_KEY}" ]]; then
-  echo "=== Generating InfluxDB API Key"
-  # Ensure the bucket in the environment is configured
-  docker exec "$instance" influx setup --force \
-    --username "${username}" \
-    --password "${password}" \
-    --org "${org}" \
-    --bucket "${bucket}" \
-    --configs-path "${config_location}" \
-    --retention "${retention}" || echo "Already initialised"
-    # --retention "${retention}" 2> /dev/null || echo "Already initialised"
-
-  # Grab the first token from the config file in the InfluxDB container
-  INFLUX_API_KEY=$(docker exec "$instance" awk '/token/ {print $3; exit 0}' "$config_location" | tr -d '"')
-
-  # Write the API key to an env file
-  echo "INFLUX_API_KEY=${INFLUX_API_KEY}" > "$influx_key_env"
-fi
+echo "=== Initialising InfluxDB API"
+# Ensure the bucket in the environment is configured
+docker exec "$instance" influx setup --force \
+  --username "${username}" \
+  --password "${password}" \
+  --org "${org}" \
+  --bucket "${bucket}" \
+  --token "${INFLUX_API_KEY}" \
+  --retention "${retention}" 2> /dev/null || echo "Already initialised"
 
 # List buckets in the InfluxDB instance
-docker exec "$instance" influx bucket list -o "${org}" -n "${bucket}" --hide-headers > /dev/null
+docker exec -e INFLUX_TOKEN="${INFLUX_API_KEY}" "$instance" influx bucket list -o "${org}" -n "${bucket}" --hide-headers > /dev/null
 bucket_check_status=$?
 
 if [ $bucket_check_status -eq 0 ]; then
@@ -55,6 +45,6 @@ if [ $bucket_check_status -eq 0 ]; then
   echo "password: ${password}"
   exit 0
 else
-  echo "Failed to configure InfluxDB. Bucket ${bucket} not found under Org ${org}"
+  echo "Bucket ${bucket} not found under Org ${org}"
   exit 1
 fi
