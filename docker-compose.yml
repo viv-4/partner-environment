@@ -295,9 +295,46 @@ services:
     networks:
       placeos:
         ipv4_address: 172.31.231.11
+    volumes:
+      - ./data/etcd-data:/etcd-data
     environment:
       ALLOW_NONE_AUTHENTICATION: "yes"
       TZ: $TZ
+      ETCD_DATA_DIR: /etcd-data
+      ETCD_INITIAL_ADVERTISE_PEER_URLS: http://172.31.231.11:2380
+      ETCD_LISTEN_PEER_URLS: http://172.31.231.11:2380
+      ETCD_LISTEN_CLIENT_URLS: http://172.31.231.11:2379,http://127.0.0.1:2379
+      ETCD_ADVERTISE_CLIENT_URLS: http://172.31.231.11:2379
+      ETCD_INITIAL_CLUSTER_TOKEN: cluster-1
+      ETCD_INITIAL_CLUSTER: "infra0=http://172.31.231.11:2380,infra1=http://172.31.231.21:2380"
+      ETCD_INITIAL_CLUSTER_STATE: new
+      ETCD_NAME: infra0
+
+  etcd2:
+    image: bitnami/etcd:${ETCD_VERSION:-3.3.13}
+    restart: always
+    container_name: etcd2
+    hostname: etcd2
+    ports:
+      - 127.0.0.1:8051:2379
+      - 127.0.0.1:8052:2380
+    networks:
+      placeos:
+        ipv4_address: 172.31.231.21
+    volumes:
+      - ./data/etcd2-data:/etcd-data
+    environment:
+      ALLOW_NONE_AUTHENTICATION: "yes"
+      TZ: $TZ
+      ETCD_DATA_DIR: /etcd-data
+      ETCD_INITIAL_ADVERTISE_PEER_URLS: http://172.31.231.21:2380
+      ETCD_LISTEN_PEER_URLS: http://172.31.231.21:2380
+      ETCD_LISTEN_CLIENT_URLS: http://172.31.231.21:2379,http://127.0.0.1:2379
+      ETCD_ADVERTISE_CLIENT_URLS: http://172.31.231.21:2379
+      ETCD_INITIAL_CLUSTER_TOKEN: cluster-1
+      ETCD_INITIAL_CLUSTER: "infra0=http://172.31.231.11:2380,infra1=http://172.31.231.21:2380"
+      ETCD_INITIAL_CLUSTER_STATE: new
+      ETCD_NAME: infra1
 
   influxdb:
     image: quay.io/influxdb/influxdb:${INFLUXDB_IMAGE_TAG-2.0.0-beta}
