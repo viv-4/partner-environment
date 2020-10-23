@@ -295,6 +295,8 @@ services:
     networks:
       placeos:
         ipv4_address: 172.31.231.11
+    healthcheck:
+      test: wget --quiet --spider 172.31.231.11:2379/metrics
     volumes:
       - ./data/etcd-data:/etcd-data
     environment:
@@ -321,6 +323,8 @@ services:
     networks:
       placeos:
         ipv4_address: 172.31.231.21
+    healthcheck:
+      test: wget --quiet --spider 172.31.231.21:2379/metrics
     volumes:
       - ./data/etcd2-data:/etcd-data
     environment:
