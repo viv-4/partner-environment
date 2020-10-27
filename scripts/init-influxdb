@@ -24,6 +24,17 @@ bucket="${INFLUX_BUCKET:-place}"
 retention="${INFLUX_RETENTION:-4w}"
 
 echo "=== Initialising InfluxDB API"
+# Wait for the service to be available
+wait=0
+max_wait=10
+until [ $wait -eq $max_wait ] || docker exec $instance influx ping > /dev/null; do
+  sleep $(( wait++ ))
+done
+if [ $wait -eq $max_wait ]; then
+  echo "Timeout waiting for InfluxDB to be ready"
+  exit 1
+fi
+
 # Ensure the bucket in the environment is configured
 docker exec "$instance" influx setup --force \
   --username "${username}" \
