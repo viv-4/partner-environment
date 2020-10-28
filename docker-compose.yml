@@ -10,6 +10,10 @@ networks:
       - subnet: 172.31.231.0/24
 
 volumes:
+  elastic-data:
+  influx-data:
+  redis-data:
+  rethink-data:
   www:
 
 # YAML Anchors
@@ -127,8 +131,6 @@ services:
       - etcd
       - redis
       - rethink
-    volumes:
-      - ./data/core-drivers:/app/bin/drivers:Z
     environment:
       # Service Hosts
       << : *etcd-client-env
@@ -277,7 +279,9 @@ services:
       placeos:
         ipv4_address: 172.31.231.10
     volumes:
-      - ./data/elastic-data:/usr/share/elasticsearch/data:Z
+      - type: volume
+        source: elastic-data
+        target: /usr/share/elasticsearch/data
     environment:
       bootstrap.memory_lock: "true"
       cluster.routing.allocation.disk.threshold_enabled: "false"
@@ -312,7 +316,9 @@ services:
     healthcheck:
       test: influx bucket list
     volumes:
-      - ./data/influx-data:/root/.influxdbv2
+      - type: volume
+        source: influx-data
+        target: /root/.influxdbv2
     command: "--reporting-disabled"
 
   nginx:
@@ -330,9 +336,6 @@ services:
       - auth
       - api
     volumes:
-      - ./config/nginx/nginx.conf:/nginx.conf:Z
-      - ./config/nginx/bearer.lua:/bearer.lua:Z
-      - ./ssl/:/etc/nginx/ssl/:Z
       - type: volume
         source: www
         target: /etc/nginx/html/
@@ -354,8 +357,9 @@ services:
       placeos:
         ipv4_address: 172.31.231.13
     volumes:
-      - ./data/redis-data:/data:Z
-      - ./config/redis.conf:/usr/local/etc/redis/redis.conf:Z
+      - type: volume
+        source: redis-data
+        target: /data
     environment:
       TZ: $TZ
 
@@ -370,6 +374,8 @@ services:
       placeos:
         ipv4_address: 172.31.231.14
     volumes:
-      - ./data/rethink-data:/data/rethinkdb_data/:Z
+      - type: volume
+        source: rethink-data
+        target: /data/rethinkdb_data
     environment:
       TZ: $TZ
