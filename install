@@ -54,19 +54,14 @@ PLACE_DOMAIN=${PLACE_DOMAIN:="localhost:8443"}
 PLACE_EMAIL=${PLACE_EMAIL:="support@place.tech"}
 PLACE_PASSWORD=${PLACE_PASSWORD:="development"}
 
-if [ ! -f ./ssl/default-domain/fullchain.pem ]; then
-  echo "=== Generating SSL certificates..."
-  ./scripts/generate-ssl ${PLACE_DOMAIN} 2> /dev/null || (printf "\nfailed to generate SSL certificates\n" && exit 1)
-fi
-
-echo "=== Generating JWT secrets..."
+echo "=== Generating secrets..."
 ./scripts/generate-secrets
 
 echo "=== Bringing up services..."
 ./scripts/start-services ${SERVICES[@]} || (printf "\nfailed to start services\n" && exit 1)
 
 echo "=== Configuring InfluxDB..."
-./scripts/init-influxdb
+./scripts/init-influxdb || (printf "\nFailed to configure InfluxDB." && exit 1)
 
 if [[ $setup_sentry == "true" ]]
 then
