@@ -304,7 +304,7 @@ services:
       TZ: $TZ
 
   influxdb:
-    image: quay.io/influxdb/influxdb:${INFLUXDB_IMAGE_TAG-2.0.0-beta}
+    image: quay.io/influxdb/influxdb:${INFLUXDB_IMAGE_TAG:-2.0.0-beta}
     container_name: influx
     restart: always
     networks:
@@ -322,7 +322,7 @@ services:
     command: "--reporting-disabled"
 
   nginx:
-    image: ubergarm/openresty-nginx-jwt
+    image: placeos/nginx:${PLACE_NGINX_TAG:-nightly}
     restart: always
     container_name: nginx
     hostname: nginx
