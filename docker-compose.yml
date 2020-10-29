@@ -345,6 +345,7 @@ services:
       - *influxdb-api-key
     environment:
       TZ: $TZ
+      PLACE_DOMAIN: ${PLACE_DOMAIN:-localhost:8443}
 
   redis:
     image: eqalpha/keydb
