@@ -27,13 +27,13 @@ EOF
 
 SERVICES=('')
 
-reset_environment=false
+reset_environment="false"
 while [[ $# -gt 0 ]]
 do
   arg="$1"
   case $arg in
     -r|--reset)
-    reset_environment=true
+    reset_environment="true"
     shift
     ;;
     -e|--elk)
@@ -55,11 +55,6 @@ source .env
 PLACE_DOMAIN=${PLACE_DOMAIN:="localhost:8443"}
 PLACE_EMAIL=${PLACE_EMAIL:="support@place.tech"}
 PLACE_PASSWORD=${PLACE_PASSWORD:="development"}
-
-if [ ! -f ./ssl/default-domain/fullchain.pem  ]; then
-    echo "=== Generating SSL certificates..."
-    ./scripts/generate-ssl ${PLACE_DOMAIN} 2> /dev/null || (printf "\nfailed to generate SSL certificates\n" && exit 1)
-fi
 
 echo "=== Refreshing services..."
 ./scripts/start-services ${SERVICES[@]} || (printf "\nfailed to start services\n" && exit 1)
