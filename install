@@ -55,7 +55,7 @@ PLACE_EMAIL=${PLACE_EMAIL:="support@place.tech"}
 PLACE_PASSWORD=${PLACE_PASSWORD:="development"}
 
 echo "=== Generating secrets..."
-docker run --rm -v "${PWD}:/tmp/secrets" -w /tmp/secrets -- placeos/init /scripts/generate-secrets
+./scripts/generate-secrets
 
 echo "=== Bringing up services..."
 ./scripts/start-services ${SERVICES[@]} || (printf "\nfailed to start services\n" && exit 1)
