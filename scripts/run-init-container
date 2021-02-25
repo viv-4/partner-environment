@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-COMPOSE_PROJECT_NAME=placeos docker-compose run --rm --no-deps init /scripts/start
+COMPOSE_PROJECT_NAME=placeos docker-compose run --rm --no-deps init start
