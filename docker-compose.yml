@@ -12,6 +12,7 @@ networks:
 volumes:
   elastic-data:
   influx-data:
+  postgres-data:
   redis-data:
   rethink-data:
   www:
@@ -217,6 +218,38 @@ services:
       << : *smtp-client-env
       # Environment
       << : *deployment-env
+
+  postgres:  # Database used by Staff API
+    image: postgres:${POSTGRES_VERSION:-13-alpine}
+    container_name: postgres
+    restart: unless-stopped
+    networks:
+      placeos:
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    environment:
+      TZ: $TZ
+      POSTGRES_USER: $POSTGRES_USER
+      POSTGRES_PASSWORD: $POSTGRES_PASSWORD
+
+  staff:  # Staff API
+    image: placeos/staff-api:${STAFF_API_VERSION:-latest}
+    container_name: staff
+    restart: unless-stopped
+    networks:
+      placeos:
+    depends_on:
+      - postgres
+    external_links:
+      - "nginx:placeos.local"
+    env_file:
+      - .env.secret_key
+      - .env.public_key
+    environment:
+      SG_ENV: production
+      STAFF_TIME_ZONE: $TZ
+      PG_DATABASE_URL: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres/placeos"
+      PLACE_URI: "http://placeos.local"
 
   # Support
 

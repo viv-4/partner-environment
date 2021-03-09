@@ -85,5 +85,8 @@ sleep 5
 echo "=== Running init container"
 ./scripts/run-init-container
 
+echo "=== Setting up Staff API..."
+PLACE_DOMAIN=placeos.local ./scripts/run-init-container
+
 echo -e "\n=== Setup complete. Login to https://$PLACE_DOMAIN/backoffice/ with"
 echo "$PLACE_EMAIL:$PLACE_PASSWORD"
