@@ -129,7 +129,7 @@ services:
       - 127.0.0.1:8083:3000
     networks:
       placeos:
-    external_links:
+    links:
       - "nginx:placeos.local"
     depends_on:
       - etcd
@@ -244,7 +244,7 @@ services:
       placeos:
     depends_on:
       - postgres
-    external_links:
+    links:
       - "nginx:placeos.local"
     env_file:
       - .env.secret_key
