@@ -75,6 +75,9 @@ then
 
     echo "=== Initiating PlaceOS with default domain ($PLACE_DOMAIN)..."
     ./scripts/run-init-container ||  (printf "\nFailed to create user entity\n" && exit 1)
+    
+    echo "=== Setting up Staff API..."
+    PLACE_DOMAIN=placeos.local ./scripts/run-init-container
 
     COMPOSE_PROJECT_NAME=placeos docker-compose restart nginx
 fi
