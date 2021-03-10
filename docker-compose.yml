@@ -133,6 +133,8 @@ services:
       - etcd
       - redis
       - rethink
+    ulimits:
+      nofile: 40000
     environment:
       # Service Hosts
       << : *etcd-client-env
