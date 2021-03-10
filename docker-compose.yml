@@ -129,6 +129,8 @@ services:
       - 127.0.0.1:8083:3000
     networks:
       placeos:
+    external_links:
+      - "nginx:placeos.local"
     depends_on:
       - etcd
       - redis
