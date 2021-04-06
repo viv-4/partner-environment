@@ -237,7 +237,7 @@ services:
       POSTGRES_PASSWORD: $POSTGRES_PASSWORD
 
   staff:  # Staff API
-    image: placeos/staff-api:${STAFF_API_VERSION:-latest}
+    image: placeos/staff-api:${PLACE_STAFF_API_TAG:-latest}
     container_name: staff
     restart: unless-stopped
     networks:
