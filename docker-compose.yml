@@ -510,7 +510,7 @@ services:
       - NODE_OPTIONS=--max-old-space-size=200 # fixes memory leak (https://github.com/elastic/kibana/issues/5170)
       - VIRTUAL_HOST=kibana.${DOMAIN}
       - HTTPS_METHOD=nohttp
-      - ELASTICSEARCH_HOSTS="http://monit-elastic:9200"
+      - ELASTICSEARCH_HOSTS="http://elastic:9200"
 
   elastalert:
     image: jertel/elastalert-docker:0.2.1
@@ -525,7 +525,7 @@ services:
       - ./config/elastalert/config:/opt/config
       - ./config/elastalert/rules:/opt/rules
     environment:
-      - ELASTICSEARCH_HOST=monit_elastic
+      - ELASTICSEARCH_HOST=elastic
     labels:
       container_group: monitoring
     logging:
