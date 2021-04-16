@@ -397,6 +397,7 @@ services:
         source: www
         target: /etc/nginx/html/
         read_only: true
+      - './config/nginx/nginx.conf:/etc/nginx/nginx.conf'
     env_file:
       - *jwt-public
       - *influxdb-api-key
@@ -533,3 +534,46 @@ services:
       options:
         max-size: 99m
         labels: container_group
+
+  # Sends all container json-file logs to logstash
+  logspout:
+    image: vincit/logspout-gelf
+    hostname: $HOSTNAME
+    container_name: "logspout"
+    networks:
+      placeos:
+        ipv4_address: 172.31.231.23
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: gelf://$LOGSTASH_HOST:$LOGSTASH_PORT
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: 99m
+
+  # Gets metrics from host machine and send to elastic
+  metricbeat:
+    image: docker.elastic.co/beats/metricbeat-oss:${ELASTIC_VERSION:-7.6}
+    hostname: $HOSTNAME
+    container_name: "metricbeat"
+    user: root
+    networks:
+      placeos:
+        ipv4_address: 172.31.231.24
+    volumes:
+      - /proc:/hostfs/proc:ro
+      - /sys/fs/cgroup:/hostfs/sys/fs/cgroup:ro
+      - /:/hostfs:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./config/metricbeat.yml:/usr/share/metricbeat/metricbeat.yml
+    cap_add:
+      - SYS_PTRACE
+      - DAC_READ_SEARCH
+    command: ["metricbeat", "-e", "--strict.perms=false", "-system.hostfs=/hostfs"]
+    restart: unless-stopped
+    tty: true
+    logging:
+      driver: json-file
+      options:
+        max-size: 99m

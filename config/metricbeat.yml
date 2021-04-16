@@ -21,7 +21,7 @@ metricbeat.modules:
 processors:
 - add_cloud_metadata:
 
-  #output.elasticsearch:
-  #  hosts: 192.168.1.122:9201
+output.elasticsearch:
+  hosts: elastic:9200
 #  username: elastic
 #  password: changeme
