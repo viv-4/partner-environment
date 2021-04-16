@@ -437,3 +437,99 @@ services:
         target: /data/rethinkdb_data
     environment:
       TZ: $TZ
+
+  # Aggregates logs and forwards them to Elasticsearch.
+  logstash:
+    image: docker.elastic.co/logstash/logstash-oss:${ELASTIC_VERSION:-7.6}
+    restart: always
+    container_name: logstash
+    hostname: logstash
+    expose:
+      - 12201/udp
+      - 5044
+    ports:
+      - "127.0.0.1:12201:12201/udp"
+    networks:
+      placeos:
+        ipv4_address: 172.31.231.20
+    volumes:
+      - ./config/logstash/config:/config
+      - ./config/logstash/patterns:/opt/logstash/extra_patterns
+    restart: always
+    labels:
+      container_group: logging
+    logging:
+      driver: json-file
+      options:
+        max-size: 99m
+        labels: container_group
+    command: logstash -f /config
+
+  # Run 'docker-compose run --rm validate-logstash-config' to quickly check the logstash config.
+  validate-logstash-config:
+    container_name: validate-logstash
+    image: docker.elastic.co/logstash/logstash-oss:${ELASTIC_VERSION:-7.6}
+    volumes:
+      - ./config/logstash/config:/config
+    command: logstash -t -f /config
+
+  # Takes care of piling piling up Elasticsearch indices/logs. Can do many other things as well.
+  # Set up a cron job that runs "docker-compose run --rm curator --config /config.yml /action-file.yml" every once in a while.
+  curator:
+    container_name: curator
+    image: bobrik/curator:5.7.6
+    volumes:
+      - ./config/curator/action-file.yml:/action-file.yml
+      - ./config/curator/config.yml:/config.yml
+    labels:
+      container_group: logging
+    logging:
+      driver: json-file
+      options:
+        max-size: 99m
+        labels: container_group
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana-oss:${ELASTIC_VERSION:-7.6}
+    restart: always
+    container_name: kibana
+    hostname: kibana
+    expose:
+      - 5601
+    networks:
+      placeos:
+        ipv4_address: 172.31.231.21
+    labels:
+      container_group: logging
+    logging:
+      driver: json-file
+      options:
+        max-size: 99m
+        labels: container_group
+    environment:
+      - NODE_OPTIONS=--max-old-space-size=200 # fixes memory leak (https://github.com/elastic/kibana/issues/5170)
+      - VIRTUAL_HOST=kibana.${DOMAIN}
+      - HTTPS_METHOD=nohttp
+      - ELASTICSEARCH_HOSTS="http://monit-elastic:9200"
+
+  elastalert:
+    image: jertel/elastalert-docker:0.2.1
+    restart: always
+    container_name: elastalert
+    hostname: elastalert
+    networks:
+      placeos:
+        ipv4_address: 172.31.231.22
+    volumes:
+      - ./config/elastalert/log:/opt/log
+      - ./config/elastalert/config:/opt/config
+      - ./config/elastalert/rules:/opt/rules
+    environment:
+      - ELASTICSEARCH_HOST=monit_elastic
+    labels:
+      container_group: monitoring
+    logging:
+      driver: json-file
+      options:
+        max-size: 99m
+        labels: container_group
