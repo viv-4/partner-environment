@@ -509,9 +509,12 @@ services:
         labels: container_group
     environment:
       - NODE_OPTIONS=--max-old-space-size=200 # fixes memory leak (https://github.com/elastic/kibana/issues/5170)
-      - VIRTUAL_HOST=kibana.${DOMAIN}
+      #- VIRTUAL_HOST=kibana.${DOMAIN}
       - HTTPS_METHOD=nohttp
       - ELASTICSEARCH_HOSTS="http://elastic:9200"
+      - SERVER_BASEPATH="/monitor"
+      - SERVER_REWRITEBASEPATH=true
+      - SERVER_PUBLICBASEURL="https://localhost:8443/monitor"
 
   elastalert:
     image: jertel/elastalert-docker:0.2.1
