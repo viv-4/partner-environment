@@ -474,21 +474,48 @@ services:
       - ./config/logstash/config:/config
     command: logstash -t -f /config
 
-  # Takes care of piling piling up Elasticsearch indices/logs. Can do many other things as well.
-  # Set up a cron job that runs "docker-compose run --rm curator --config /config.yml /action-file.yml" every once in a while.
-  curator:
-    container_name: curator
-    image: bobrik/curator:5.7.6
+  # Sends all container json-file logs to logstash
+  logspout:
+    image: vincit/logspout-gelf
+    hostname: $MONITOR_HOSTNAME
+    container_name: "logspout"
+    networks:
+      placeos:
+        ipv4_address: 172.31.231.23
     volumes:
-      - ./config/curator/action-file.yml:/action-file.yml
-      - ./config/curator/config.yml:/config.yml
-    labels:
-      container_group: logging
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: gelf://$LOGSTASH_HOST:$LOGSTASH_PORT
+    restart: unless-stopped
     logging:
       driver: json-file
       options:
         max-size: 99m
-        labels: container_group
+
+  # Gets metrics from host machine and send to elastic
+  metricbeat:
+    image: docker.elastic.co/beats/metricbeat-oss:${ELASTIC_VERSION:-7.6}
+    hostname: $MONITOR_HOSTNAME
+    container_name: "metricbeat"
+    user: root
+    networks:
+      placeos:
+        ipv4_address: 172.31.231.24
+    volumes:
+      - /proc:/hostfs/proc:ro
+      - /sys/fs/cgroup:/hostfs/sys/fs/cgroup:ro
+      - /:/hostfs:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./config/metricbeat.yml:/usr/share/metricbeat/metricbeat.yml
+    cap_add:
+      - SYS_PTRACE
+      - DAC_READ_SEARCH
+    command: ["metricbeat", "-e", "--strict.perms=false", "-system.hostfs=/hostfs"]
+    restart: unless-stopped
+    tty: true
+    logging:
+      driver: json-file
+      options:
+        max-size: 99m
 
   kibana:
     image: docker.elastic.co/kibana/kibana-oss:${ELASTIC_VERSION:-7.6}
@@ -514,69 +541,43 @@ services:
       - ELASTICSEARCH_HOSTS="http://elastic:9200"
       - SERVER_BASEPATH="/monitor"
       - SERVER_REWRITEBASEPATH=true
-      - SERVER_PUBLICBASEURL="https://localhost:8443/monitor"
+      - SERVER_PUBLICBASEURL="https://$PLACE_DOMAIN/monitor"
 
-  elastalert:
-    image: jertel/elastalert-docker:0.2.1
-    restart: always
-    container_name: elastalert
-    hostname: elastalert
-    networks:
-      placeos:
-        ipv4_address: 172.31.231.22
+  # Takes care of piling piling up Elasticsearch indices/logs. Can do many other things as well.
+  # Set up a cron job that runs "docker-compose run --rm curator --config /config.yml /action-file.yml" every once in a while.
+  curator:
+    container_name: curator
+    image: bobrik/curator:5.7.6
     volumes:
-      - ./config/elastalert/log:/opt/log
-      - ./config/elastalert/config:/opt/config
-      - ./config/elastalert/rules:/opt/rules
-    environment:
-      - ELASTICSEARCH_HOST=elastic
+      - ./config/curator/action-file.yml:/action-file.yml
+      - ./config/curator/config.yml:/config.yml
     labels:
-      container_group: monitoring
+      container_group: logging
     logging:
       driver: json-file
       options:
         max-size: 99m
         labels: container_group
 
-  # Sends all container json-file logs to logstash
-  logspout:
-    image: vincit/logspout-gelf
-    hostname: $HOSTNAME
-    container_name: "logspout"
-    networks:
-      placeos:
-        ipv4_address: 172.31.231.23
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    command: gelf://$LOGSTASH_HOST:$LOGSTASH_PORT
-    restart: unless-stopped
-    logging:
-      driver: json-file
-      options:
-        max-size: 99m
+  #elastalert:
+  #  image: jertel/elastalert-docker:0.2.1
+  #  restart: always
+  #  container_name: elastalert
+  #  hostname: elastalert
+  #  networks:
+  #    placeos:
+  #      ipv4_address: 172.31.231.22
+  #  volumes:
+  #    - ./config/elastalert/log:/opt/log
+  #    - ./config/elastalert/config:/opt/config
+  #    - ./config/elastalert/rules:/opt/rules
+  #  environment:
+  #    - ELASTICSEARCH_HOST=elastic
+  #  labels:
+  #    container_group: monitoring
+  #  logging:
+  #    driver: json-file
+  #    options:
+  #      max-size: 99m
+  #      labels: container_group
 
-  # Gets metrics from host machine and send to elastic
-  metricbeat:
-    image: docker.elastic.co/beats/metricbeat-oss:${ELASTIC_VERSION:-7.6}
-    hostname: $HOSTNAME
-    container_name: "metricbeat"
-    user: root
-    networks:
-      placeos:
-        ipv4_address: 172.31.231.24
-    volumes:
-      - /proc:/hostfs/proc:ro
-      - /sys/fs/cgroup:/hostfs/sys/fs/cgroup:ro
-      - /:/hostfs:ro
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./config/metricbeat.yml:/usr/share/metricbeat/metricbeat.yml
-    cap_add:
-      - SYS_PTRACE
-      - DAC_READ_SEARCH
-    command: ["metricbeat", "-e", "--strict.perms=false", "-system.hostfs=/hostfs"]
-    restart: unless-stopped
-    tty: true
-    logging:
-      driver: json-file
-      options:
-        max-size: 99m
