@@ -36,7 +36,6 @@ These will need to be installed prior to running `./install`:
 2. Run the install script: `./install` (use this to update repositories and images too)
 
 `install` (_should only be run once_) exposes additional services behind flags...
-- Use the `-e` or `--elk` flag to run the Elastic stack with Kibana and Logstash
 - Use the `-s` or `--sentry` flag to run Sentry
 
 ### Restart
