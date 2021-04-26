@@ -538,25 +538,3 @@ services:
       options:
         max-size: 99m
         labels: container_group
-
-  #elastalert:
-  #  image: jertel/elastalert-docker:0.2.1
-  #  restart: always
-  #  container_name: elastalert
-  #  hostname: elastalert
-  #  networks:
-  #    placeos:
-  #  volumes:
-  #    - ./config/elastalert/log:/opt/log
-  #    - ./config/elastalert/config:/opt/config
-  #    - ./config/elastalert/rules:/opt/rules
-  #  environment:
-  #    - ELASTICSEARCH_HOST=elastic
-  #  labels:
-  #    container_group: monitoring
-  #  logging:
-  #    driver: json-file
-  #    options:
-  #      max-size: 99m
-  #      labels: container_group
-
