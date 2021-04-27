@@ -475,7 +475,7 @@ services:
   metricbeat:
     image: docker.elastic.co/beats/metricbeat-oss:${ELASTIC_VERSION:-7.6}
     hostname: $MONITOR_HOSTNAME
-    container_name: "metricbeat"
+    container_name: metricbeat
     user: root
     networks:
       placeos:
