@@ -491,7 +491,6 @@ services:
     cap_add:
       - SYS_PTRACE
       - DAC_READ_SEARCH
-        #command: ["metricbeat", "-e", "--strict.perms=false", "-system.hostfs=/hostfs"]
     command: ["metricbeat", "-e", "--strict.perms=false", "-system.hostfs=/hostfs", "-E", "output.elasticsearch.hosts=[$ELASTIC_HOST:$ELASTIC_PORT]"]
     restart: unless-stopped
     tty: true
@@ -518,7 +517,6 @@ services:
         labels: container_group
     environment:
       - NODE_OPTIONS=--max-old-space-size=200 # fixes memory leak (https://github.com/elastic/kibana/issues/5170)
-      #- VIRTUAL_HOST=kibana.${DOMAIN}
       - HTTPS_METHOD=nohttp
       - ELASTICSEARCH_HOSTS="http://elastic:9200"
       - SERVER_BASEPATH="/monitor"
