@@ -462,7 +462,7 @@ services:
   logspout:
     image: vincit/logspout-gelf
     hostname: $MONITOR_HOSTNAME
-    container_name: "logspout"
+    container_name: logspout
     networks:
       placeos:
     volumes:
