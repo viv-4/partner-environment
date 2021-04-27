@@ -521,7 +521,7 @@ services:
       - ELASTICSEARCH_HOSTS="http://elastic:9200"
       - SERVER_BASEPATH="/monitor"
       - SERVER_REWRITEBASEPATH=true
-      - SERVER_PUBLICBASEURL="https://$PLACE_DOMAIN/monitor"
+      - SERVER_PUBLICBASEURL="https://$PLACE_DOMAIN/$PLACE_METRICS_ROUTE"
 
   # Takes care of piling piling up Elasticsearch indices/logs. Can do many other things as well.
   # Set up a cron job that runs "docker-compose run --rm curator --config /config.yml /action-file.yml" every once in a while.
