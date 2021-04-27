@@ -519,7 +519,7 @@ services:
       - NODE_OPTIONS=--max-old-space-size=200 # fixes memory leak (https://github.com/elastic/kibana/issues/5170)
       - HTTPS_METHOD=nohttp
       - ELASTICSEARCH_HOSTS="http://elastic:9200"
-      - SERVER_BASEPATH="/monitor"
+      - SERVER_BASEPATH="/$PLACE_METRICS_ROUTE"
       - SERVER_REWRITEBASEPATH=true
       - SERVER_PUBLICBASEURL="https://$PLACE_DOMAIN/$PLACE_METRICS_ROUTE"
 
