@@ -441,13 +441,10 @@ services:
       - ./config/logstash/config:/config
       - ./config/logstash/patterns:/opt/logstash/extra_patterns
     restart: always
-    labels:
-      container_group: logging
     logging:
       driver: json-file
       options:
         max-size: 99m
-        labels: container_group
     command: logstash -f /config
 
   # Run 'docker-compose run --rm validate-logstash-config' to quickly check the logstash config.
@@ -508,13 +505,10 @@ services:
       - 5601
     networks:
       placeos:
-    labels:
-      container_group: logging
     logging:
       driver: json-file
       options:
         max-size: 99m
-        labels: container_group
     environment:
       - NODE_OPTIONS=--max-old-space-size=200 # fixes memory leak (https://github.com/elastic/kibana/issues/5170)
       - HTTPS_METHOD=nohttp
@@ -531,10 +525,7 @@ services:
     volumes:
       - ./config/curator/action-file.yml:/action-file.yml
       - ./config/curator/config.yml:/config.yml
-    labels:
-      container_group: logging
     logging:
       driver: json-file
       options:
         max-size: 99m
-        labels: container_group
