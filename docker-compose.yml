@@ -422,6 +422,8 @@ services:
     environment:
       TZ: $TZ
 
+    # Logging
+
   # Aggregates logs and forwards them to Elasticsearch.
   logstash:
     image: docker.elastic.co/logstash/logstash-oss:${ELASTIC_VERSION:-7.6}
