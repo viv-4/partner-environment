@@ -81,7 +81,6 @@ services:
       - 127.0.0.1:8082:3000
     networks:
       placeos:
-        ipv4_address: 172.31.231.2
     depends_on:
       - auth
       - elastic
@@ -112,7 +111,6 @@ services:
       - 127.0.0.1:8081:8080
     networks:
       placeos:
-        ipv4_address: 172.31.231.3
     depends_on:
       - rethink
     env_file:
@@ -131,7 +129,6 @@ services:
       - 127.0.0.1:8083:3000
     networks:
       placeos:
-        ipv4_address: 172.31.231.4
     links:
       - "nginx:placeos.local"
     depends_on:
@@ -155,7 +152,6 @@ services:
     hostname: edge
     networks:
       placeos:
-        ipv4_address: 172.31.231.5
     depends_on:
       - core
     environment:
@@ -171,7 +167,6 @@ services:
       - 127.0.0.1:8087:3000
     networks:
       placeos:
-        ipv4_address: 172.31.231.6
     volumes:
       - type: volume
         source: www
@@ -192,7 +187,6 @@ services:
       - 127.0.0.1:8089:3000
     networks:
       placeos:
-        ipv4_address: 172.31.231.7
     depends_on:
       - redis
       - rethink
@@ -216,7 +210,6 @@ services:
       - 127.0.0.1:8088:3000
     networks:
       placeos:
-        ipv4_address: 172.31.231.8
     depends_on:
       - etcd
       - redis
@@ -236,7 +229,6 @@ services:
     restart: unless-stopped
     networks:
       placeos:
-        ipv4_address: 172.31.231.9
     volumes:
       - postgres-data:/var/lib/postgresql/data
     environment:
@@ -250,7 +242,6 @@ services:
     restart: unless-stopped
     networks:
       placeos:
-        ipv4_address: 172.31.231.10
     depends_on:
       - postgres
     links:
@@ -272,7 +263,6 @@ services:
     restart: on-failure
     networks:
       placeos:
-        ipv4_address: 172.31.231.11
     depends_on:
       - rubber-soul
     environment:
@@ -299,7 +289,6 @@ services:
       - 127.0.0.1:8084:3000
     networks:
       placeos:
-        ipv4_address: 172.31.231.12
     depends_on:
       - elastic
       - rethink
@@ -319,7 +308,6 @@ services:
       - 127.0.0.1:8086:8080
     networks:
       placeos:
-        ipv4_address: 172.31.231.13
     environment:
       SERVER_SECRET: ${PLACE_SERVER_SECRET:-development}
 
@@ -334,7 +322,6 @@ services:
       - 127.0.0.1:8090:9200
     networks:
       placeos:
-        ipv4_address: 172.31.231.14
     volumes:
       - type: volume
         source: elastic-data
@@ -355,7 +342,6 @@ services:
       - 127.0.0.1:8092:2380
     networks:
       placeos:
-        ipv4_address: 172.31.231.15
     environment:
       ALLOW_NONE_AUTHENTICATION: "yes"
       TZ: $TZ
@@ -366,7 +352,6 @@ services:
     restart: always
     networks:
       placeos:
-        ipv4_address: 172.31.231.16
     ports:
       - 127.0.0.1:9999:9999
     hostname: influx
@@ -388,7 +373,6 @@ services:
       - 8443:443
     networks:
       placeos:
-        ipv4_address: 172.31.231.17
     depends_on:
       - auth
       - api
@@ -413,7 +397,6 @@ services:
       - 127.0.0.1:7379:6379
     networks:
       placeos:
-        ipv4_address: 172.31.231.18
     volumes:
       - type: volume
         source: redis-data
@@ -430,7 +413,6 @@ services:
       - 127.0.0.1:8093:8080
     networks:
       placeos:
-        ipv4_address: 172.31.231.19
     volumes:
       - type: volume
         source: rethink-data
