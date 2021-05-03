@@ -13,12 +13,5 @@ then
   fi
 else
   echo "Host is not Linux, disabling /proc and /sys/fs/cgroup Metricbeat monitoring"
-  if [[ $(grep METRICBEAT_PROC_PATH .env -c) != "0" ]]
-  then
-    sed -i '/METRICBEAT_.*_PATH/d' .env
-  fi
-  if [[ $(grep METRICBEAT_CGROUP_PATH .env -c) != "0" ]]
-  then
-    sed -i '/METRICBEAT_.*_PATH/d' .env
-  fi
+  sed -i '/METRICBEAT_.*_PATH/d' .env
 fi
