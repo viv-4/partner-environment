@@ -480,8 +480,8 @@ services:
     networks:
       placeos:
     volumes:
-      - /proc:/hostfs/proc:ro
-      - /sys/fs/cgroup:/hostfs/sys/fs/cgroup:ro
+      - ${METRICBEAT_PROC_PATH:-/dev/null}:/hostfs/proc
+      - ${METRICBEAT_CGROUP_PATH:-/dev/null}:/hostfs/sys/fs/cgroup
       - /:/hostfs:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./config/metricbeat.yml:/usr/share/metricbeat/metricbeat.yml
