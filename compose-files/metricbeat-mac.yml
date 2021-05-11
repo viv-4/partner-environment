@@ -16,5 +16,4 @@
       - DAC_READ_SEARCH
     command: ["metricbeat", "-e", "--strict.perms=false", "-system.hostfs=/hostfs", "-E", "output.elasticsearch.hosts=[$ELASTIC_HOST:$ELASTIC_PORT]"]
     restart: unless-stopped
-    tty: true
     << : *loggin-env
