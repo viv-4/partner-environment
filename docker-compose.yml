@@ -68,6 +68,12 @@ x-smtp-client-env: &smtp-client-env
   SMTP_PASS: ${SMTP_PASS:-}      # password if required
   SMTP_SECURE: ${SMTP_SECURE:-}  # blank for unsecure, `SMTPS` for TLS, `STARTTLS` for negotiating TLS on unsecure connection
 
+x-logging-env: &logging-env
+  logging:
+    driver: json-file
+    options:
+      max-size: 99m
+
 services:
 
   # Services
@@ -101,6 +107,7 @@ services:
       << : *redis-client-env
       << : *rethinkdb-client-env
       << : *rubber-soul-client-env
+    << : *logging-env
 
   auth: # Authentication Service
     image: placeos/auth:${PLACE_AUTH_TAG:-latest}
@@ -119,6 +126,7 @@ services:
       << : *rethinkdb-client-env
       COAUTH_NO_SSL: "true"
       TZ: $TZ
+    << : *logging-env
 
   core: # Module coordinator
     image: placeos/core:${PLACE_CORE_TAG:-latest}
@@ -144,6 +152,7 @@ services:
       << : *rethinkdb-client-env
       # Environment
       << : *deployment-env
+    << : *logging-env
 
   edge: # Module coordinator
     image: placeos/edge:${PLACE_EDGE_TAG:-latest}
@@ -157,6 +166,7 @@ services:
     environment:
       << : *edge-env
       << : *deployment-env
+    << : *logging-env
 
   frontends: # Frontend deployment service
     image: placeos/frontends:${PLACE_FRONTENDS_TAG:-latest}
@@ -178,6 +188,7 @@ services:
       << : *rethinkdb-client-env
       # Environment
       << : *deployment-env
+    << : *logging-env
 
   source:
     image: docker.io/placeos/source:${PLACE_SOURCE_TAG:-latest}
@@ -200,6 +211,7 @@ services:
       << : *rethinkdb-client-env
       # Environment
       << : *deployment-env
+    << : *logging-env
 
   triggers: # Conditional execution service
     image: placeos/triggers:${PLACE_TRIGGERS_TAG:-latest}
@@ -222,6 +234,7 @@ services:
       << : *smtp-client-env
       # Environment
       << : *deployment-env
+    << : *logging-env
 
   postgres:  # Database used by Staff API
     image: postgres:${POSTGRES_VERSION:-13-alpine}
@@ -235,6 +248,7 @@ services:
       TZ: $TZ
       POSTGRES_USER: $POSTGRES_USER
       POSTGRES_PASSWORD: $POSTGRES_PASSWORD
+    << : *logging-env
 
   staff:  # Staff API
     image: placeos/staff-api:${PLACE_STAFF_API_TAG:-latest}
@@ -254,6 +268,7 @@ services:
       STAFF_TIME_ZONE: $TZ
       PG_DATABASE_URL: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres/placeos"
       PLACE_URI: "http://placeos.local"
+    << : *logging-env
 
   # Support
 
@@ -279,6 +294,7 @@ services:
       << : *elastic-client-env
       # Environment
       << : *deployment-env
+    << : *logging-env
 
   rubber-soul: # RethinkDB to Elasticsearch Service
     image: placeos/rubber-soul:${PLACE_RUBBER_SOUL_TAG:-latest}
@@ -298,6 +314,7 @@ services:
       << : *elastic-client-env
       # Environment
       << : *deployment-env
+    << : *logging-env
 
   dispatch: # Engine driver server registration and data routing
     image: placeos/dispatch:${PLACE_DISPATCH_TAG:-latest}
@@ -310,6 +327,7 @@ services:
       placeos:
     environment:
       SERVER_SECRET: ${PLACE_SERVER_SECRET:-development}
+    << : *logging-env
 
   # Resources
 
@@ -331,6 +349,7 @@ services:
       cluster.routing.allocation.disk.threshold_enabled: "false"
       discovery.type: single-node
       TZ: $TZ
+    << : *logging-env
 
   etcd:
     image: bitnami/etcd:${ETCD_VERSION:-3}
@@ -345,6 +364,7 @@ services:
     environment:
       ALLOW_NONE_AUTHENTICATION: "yes"
       TZ: $TZ
+    << : *logging-env
 
   influxdb:
     image: quay.io/influxdb/influxdb:${INFLUXDB_IMAGE_TAG:-2.0.0-beta}
@@ -362,6 +382,7 @@ services:
         source: influx-data
         target: /root/.influxdbv2
     command: "--reporting-disabled"
+    << : *logging-env
 
   nginx:
     image: placeos/nginx:${PLACE_NGINX_TAG:-nightly}
@@ -389,6 +410,7 @@ services:
     environment:
       TZ: $TZ
       PLACE_DOMAIN: ${PLACE_DOMAIN:-localhost:8443}
+    << : *logging-env
 
   redis:
     image: eqalpha/keydb
@@ -405,6 +427,7 @@ services:
         target: /data
     environment:
       TZ: $TZ
+    << : *logging-env
 
   rethink:
     image: rethinkdb:${RETHINKDB_VERSION:-2.4}
@@ -421,6 +444,7 @@ services:
         target: /data/rethinkdb_data
     environment:
       TZ: $TZ
+    << : *logging-env
 
     # Logging
 
@@ -441,11 +465,8 @@ services:
       - ./config/logstash/config:/config
       - ./config/logstash/patterns:/opt/logstash/extra_patterns
     restart: always
-    logging:
-      driver: json-file
-      options:
-        max-size: 99m
     command: logstash -f /config
+    << : *logging-env
 
   # Run 'docker-compose run --rm validate-logstash-config' to quickly check the logstash config.
   validate-logstash-config:
@@ -466,10 +487,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     command: gelf://$LOGSTASH_HOST:$LOGSTASH_PORT
     restart: unless-stopped
-    logging:
-      driver: json-file
-      options:
-        max-size: 99m
+    << : *logging-env
 
   kibana:
     image: docker.elastic.co/kibana/kibana-oss:${ELASTIC_VERSION:-7.6}
@@ -480,10 +498,6 @@ services:
       - 5601
     networks:
       placeos:
-    logging:
-      driver: json-file
-      options:
-        max-size: 99m
     environment:
       - NODE_OPTIONS=--max-old-space-size=200 # fixes memory leak (https://github.com/elastic/kibana/issues/5170)
       - HTTPS_METHOD=nohttp
@@ -491,6 +505,7 @@ services:
       - SERVER_BASEPATH="/$PLACE_METRICS_ROUTE"
       - SERVER_REWRITEBASEPATH=true
       - SERVER_PUBLICBASEURL="https://$PLACE_DOMAIN/$PLACE_METRICS_ROUTE"
+    << : *logging-env
 
   # Takes care of piling piling up Elasticsearch indices/logs. Can do many other things as well.
   # Set up a cron job that runs "docker-compose run --rm curator --config /config.yml /action-file.yml" every once in a while.
@@ -500,7 +515,27 @@ services:
     volumes:
       - ./config/curator/action-file.yml:/action-file.yml
       - ./config/curator/config.yml:/config.yml
-    logging:
-      driver: json-file
-      options:
-        max-size: 99m
+    << : *logging-env
+
+  # Gets metrics from host machine and send to elastic
+  metricbeat:
+    image: docker.elastic.co/beats/metricbeat-oss:${ELASTIC_VERSION:-7.6}
+    hostname: $MONITOR_HOSTNAME
+    container_name: metricbeat
+    user: root
+    networks:
+      placeos:
+    volumes:
+      - /proc:/hostfs/proc
+      - /sys/fs/cgroup:/hostfs/sys/fs/cgroup
+      - /:/hostfs:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./config/metricbeat.yml:/usr/share/metricbeat/metricbeat.yml
+    cap_add:
+      - SYS_PTRACE
+      - DAC_READ_SEARCH
+    command: ["metricbeat", "-e", "--strict.perms=false", "-system.hostfs=/hostfs", "-E", "output.elasticsearch.hosts=[$ELASTIC_HOST:$ELASTIC_PORT]"]
+    restart: unless-stopped
+    tty: true
+    << : *logging-env
+
