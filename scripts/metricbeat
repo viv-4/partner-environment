@@ -1,0 +1,19 @@
+#! /usr/bin/env bash
+
+if [[ $(uname) == "Linux" ]]
+then
+  echo "Host is Linux, enabling metricbeat"
+  if [[ $(grep "metricbeat:" docker-compose.yml -c) == "0" ]]
+  then
+    cat compose-files/metricbeat.yml >> docker-compose.yml
+  fi
+fi
+
+if [[ $(uname) == "Darwin" ]]
+then
+  echo "Host is MacOS, enabling metricbeat without /proc & /sys/fs/cgroup"
+  if [[ $(grep "metricbeat:" docker-compose.yml -c) == "0" ]]
+  then
+    cat compose-files/metricbeat-mac.yml >> docker-compose.yml
+  fi
+fi

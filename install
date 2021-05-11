@@ -48,7 +48,7 @@ PLACE_EMAIL=${PLACE_EMAIL:="support@place.tech"}
 PLACE_PASSWORD=${PLACE_PASSWORD:="development"}
 
 echo "=== Checking Host OS..."
-./scripts/metricbeat-paths
+./scripts/metricbeat
 
 echo "=== Generating secrets..."
 ./scripts/generate-secrets

@@ -1,0 +1,24 @@
+
+  # Gets metrics from host machine and send to elastic
+  metricbeat:
+    image: docker.elastic.co/beats/metricbeat-oss:${ELASTIC_VERSION:-7.6}
+    hostname: $MONITOR_HOSTNAME
+    container_name: metricbeat
+    user: root
+    networks:
+      placeos:
+    volumes:
+      - /:/hostfs:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./config/metricbeat.yml:/usr/share/metricbeat/metricbeat.yml
+    cap_add:
+      - SYS_PTRACE
+      - DAC_READ_SEARCH
+    command: ["metricbeat", "-e", "--strict.perms=false", "-system.hostfs=/hostfs", "-E", "output.elasticsearch.hosts=[$ELASTIC_HOST:$ELASTIC_PORT]"]
+    restart: unless-stopped
+    tty: true
+    logging:
+      driver: json-file
+      options:
+        max-size: 99m
+
