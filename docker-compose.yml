@@ -446,7 +446,7 @@ services:
       TZ: $TZ
     << : *logging-env
 
-    # Logging
+  # Logging
 
   # Aggregates logs and forwards them to Elasticsearch.
   logstash:
@@ -485,7 +485,7 @@ services:
       placeos:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-    command: gelf://$LOGSTASH_HOST:$LOGSTASH_PORT
+    command: gelf://${LOGSTASH_HOST}:${LOGSTASH_PORT}
     restart: unless-stopped
     << : *logging-env
 
@@ -501,10 +501,10 @@ services:
     environment:
       - NODE_OPTIONS=--max-old-space-size=200 # fixes memory leak (https://github.com/elastic/kibana/issues/5170)
       - HTTPS_METHOD=nohttp
-      - ELASTICSEARCH_HOSTS="http://elastic:9200"
-      - SERVER_BASEPATH="/$PLACE_METRICS_ROUTE"
+      - ELASTICSEARCH_HOSTS="http://${ELASTIC_HOST}:${ELASTIC_PORT}"
+      - SERVER_BASEPATH="/${PLACE_METRICS_ROUTE}"
       - SERVER_REWRITEBASEPATH=true
-      - SERVER_PUBLICBASEURL="https://$PLACE_DOMAIN/$PLACE_METRICS_ROUTE"
+      - SERVER_PUBLICBASEURL="https://${PLACE_DOMAIN}/${PLACE_METRICS_ROUTE}"
     << : *logging-env
 
   # Takes care of piling piling up Elasticsearch indices/logs. Can do many other things as well.
