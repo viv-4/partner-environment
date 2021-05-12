@@ -1,4 +1,3 @@
-
   # Gets metrics from host machine and send to elastic
   metricbeat:
     image: docker.elastic.co/beats/metricbeat-oss:${ELASTIC_VERSION:-7.6}
@@ -16,4 +15,4 @@
       - DAC_READ_SEARCH
     command: ["metricbeat", "-e", "--strict.perms=false", "-system.hostfs=/hostfs", "-E", "output.elasticsearch.hosts=[$ELASTIC_HOST:$ELASTIC_PORT]"]
     restart: unless-stopped
-    << : *loggin-env
+    << : *logging-env
