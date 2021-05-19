@@ -3,3 +3,6 @@ www
 data
 ssl
 .env.*
+*.swp
+.htpasswd*
+docker-compose.yml

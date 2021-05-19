@@ -19,24 +19,17 @@ Usage: ./install [options]
 install must be run from the root of the environment.
 
 Options:
-    -e, --elk                        Set up ELK stack
     -s, --sentry                     Set up Sentry
 EOF
 )
 
 SERVICES=('')
 
-setup_elastic_stack=false
 setup_sentry=false
 while [[ $# -gt 0 ]]
 do
   arg="$1"
   case $arg in
-    -e|--elk)
-    setup_elastic_stack=true
-    SERVICES+=('-e')
-    shift
-    ;;
     -s|--sentry)
     setup_sentry=true
     SERVICES+=('-s')
@@ -53,6 +46,9 @@ source .env
 PLACE_DOMAIN=${PLACE_DOMAIN:="localhost:8443"}
 PLACE_EMAIL=${PLACE_EMAIL:="support@place.tech"}
 PLACE_PASSWORD=${PLACE_PASSWORD:="development"}
+
+echo "=== Checking Host OS..."
+./scripts/metricbeat
 
 echo "=== Generating secrets..."
 ./scripts/generate-secrets
@@ -71,13 +67,6 @@ then
     echo "support@place.tech:development"
 else
     echo "=== To setup sentry, run \`./scripts/setup-sentry.sh\`"
-fi
-
-if [[ $setup_elastic_stack == "true" ]]
-then
-    ./scripts/start-elastic-stack.sh
-else
-    echo "=== To setup elastic stack run 'docker-compose up -d' in monitor-host directory."
 fi
 
 sleep 5
