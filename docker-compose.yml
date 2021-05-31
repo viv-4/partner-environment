@@ -83,8 +83,6 @@ services:
     restart: always
     container_name: api
     hostname: api
-    ports:
-      - 127.0.0.1:8082:3000
     networks:
       placeos:
     depends_on:
@@ -114,8 +112,6 @@ services:
     restart: always
     container_name: auth
     hostname: auth
-    ports:
-      - 127.0.0.1:8081:8080
     networks:
       placeos:
     depends_on:
@@ -133,8 +129,6 @@ services:
     restart: always
     container_name: core
     hostname: core
-    ports:
-      - 127.0.0.1:8083:3000
     networks:
       placeos:
     links:
@@ -173,8 +167,6 @@ services:
     restart: always
     container_name: frontends
     hostname: frontends
-    ports:
-      - 127.0.0.1:8087:3000
     networks:
       placeos:
     volumes:
@@ -194,8 +186,6 @@ services:
     image: docker.io/placeos/source:${PLACE_SOURCE_TAG:-latest}
     restart: always
     container_name: source
-    ports:
-      - 127.0.0.1:8089:3000
     networks:
       placeos:
     depends_on:
@@ -218,8 +208,6 @@ services:
     restart: always
     container_name: triggers
     hostname: triggers
-    ports:
-      - 127.0.0.1:8088:3000
     networks:
       placeos:
     depends_on:
@@ -301,8 +289,6 @@ services:
     restart: always
     container_name: rubber-soul
     hostname: rubber-soul
-    ports:
-      - 127.0.0.1:8084:3000
     networks:
       placeos:
     depends_on:
@@ -321,8 +307,6 @@ services:
     restart: always
     container_name: dispatch
     hostname: dispatch
-    ports:
-      - 127.0.0.1:8086:8080
     networks:
       placeos:
     environment:
@@ -336,8 +320,6 @@ services:
     restart: always
     container_name: elastic
     hostname: elastic
-    ports:
-      - 127.0.0.1:8090:9200
     networks:
       placeos:
     volumes:
@@ -356,9 +338,6 @@ services:
     restart: always
     container_name: etcd
     hostname: etcd
-    ports:
-      - 127.0.0.1:8091:2379
-      - 127.0.0.1:8092:2380
     networks:
       placeos:
     environment:
@@ -372,8 +351,6 @@ services:
     restart: always
     networks:
       placeos:
-    ports:
-      - 127.0.0.1:9999:9999
     hostname: influx
     healthcheck:
       test: influx bucket list
@@ -417,8 +394,6 @@ services:
     restart: always
     container_name: redis
     hostname: redis
-    ports:
-      - 127.0.0.1:7379:6379
     networks:
       placeos:
     volumes:
@@ -434,8 +409,6 @@ services:
     restart: always
     container_name: rethink
     hostname: rethink
-    ports:
-      - 127.0.0.1:8093:8080
     networks:
       placeos:
     volumes:
@@ -457,8 +430,6 @@ services:
     expose:
       - 12201/udp
       - 5044
-    ports:
-      - "127.0.0.1:12201:12201/udp"
     networks:
       placeos:
     volumes:
