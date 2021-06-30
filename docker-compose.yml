@@ -131,8 +131,6 @@ services:
     hostname: core
     networks:
       placeos:
-    links:
-      - "nginx:placeos.local"
     depends_on:
       - etcd
       - redis
@@ -246,8 +244,6 @@ services:
       placeos:
     depends_on:
       - postgres
-    links:
-      - "nginx:placeos.local"
     env_file:
       - .env.secret_key
       - .env.public_key
@@ -255,7 +251,8 @@ services:
       SG_ENV: production
       STAFF_TIME_ZONE: $TZ
       PG_DATABASE_URL: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres/placeos"
-      PLACE_URI: "http://placeos.local"
+      PLACE_URI: "https://nginx:8443"
+      SSL_VERIFY_NONE: "true"
     << : *logging-env
 
   # Support
