@@ -251,7 +251,7 @@ services:
       SG_ENV: production
       STAFF_TIME_ZONE: $TZ
       PG_DATABASE_URL: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres/placeos"
-      PLACE_URI: "https://nginx:8443"
+      PLACE_URI: "https://nginx"
       SSL_VERIFY_NONE: "true"
     << : *logging-env
 
