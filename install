@@ -47,8 +47,8 @@ PLACE_DOMAIN=${PLACE_DOMAIN:="localhost:8443"}
 PLACE_EMAIL=${PLACE_EMAIL:="support@place.tech"}
 PLACE_PASSWORD=${PLACE_PASSWORD:="development"}
 
-echo "=== Checking Host OS..."
-./scripts/metricbeat
+# echo "=== Checking Host OS..."
+# ./scripts/metricbeat
 
 echo "=== Generating secrets..."
 ./scripts/generate-secrets
