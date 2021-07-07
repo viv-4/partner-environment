@@ -116,10 +116,12 @@ services:
       placeos:
     depends_on:
       - rethink
+      - redis
     env_file:
       - *jwt-secret
     environment:
       << : *rethinkdb-client-env
+      << : *redis-client-env
       COAUTH_NO_SSL: "true"
       TZ: $TZ
     << : *logging-env
