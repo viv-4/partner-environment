@@ -348,7 +348,7 @@ services:
     << : *logging-env
 
   influxdb:
-    image: quay.io/influxdb/influxdb:${INFLUXDB_IMAGE_TAG:-2.0.0-beta}
+    image: quay.io/influxdb/influxdb:${INFLUXDB_IMAGE_TAG:-v2.0.7}
     container_name: influx
     restart: always
     networks:
