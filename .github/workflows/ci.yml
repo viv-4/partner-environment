@@ -16,7 +16,7 @@ jobs:
             stable: false
     steps:
       - uses: actions/checkout@v2
-      - name: Run docker-compose test environment
+      - name: Spin up environment
         run: ./install
         env:
           PLACE_AUTH_TAG: ${{ matrix.version }}
@@ -31,3 +31,5 @@ jobs:
           PLACE_TRIGGERS_TAG: ${{ matrix.version }}
           PLACE_STAFF_API_TAG: edge
           PLACE_NGINX_TAG: staff-api
+      - name: Healthcheck to confirm environment is up
+        run: curl --insecure https://localhost:8443/api/engine/v2
