@@ -1,5 +1,7 @@
 # PlaceOS Partner Environment
 
+[![CI](https://github.com/place-labs/partner-environment/actions/workflows/ci.yml/badge.svg)](https://github.com/place-labs/partner-environment/actions/workflows/ci.yml)
+
 For use when testing, improving or experimenting with PlaceOS on a local machine.
 Use it for driver, frontend, api and infra development. Treat it as insecure.
 When finished dev work for the day, stop the containers with `docker-compose down`
@@ -46,9 +48,7 @@ If you need to reset the state of the application, pass `--reset` or `-r`
 
 ### Developing drivers
 
-1. Clone and 3rd party driver repositories into `./drivers/repositories`
-2. Browse to http://localhost:8085/
-3. You can edit drivers directly in VS Code.
+See the [PlaceOS Drivers repository](https://github.com/PlaceOS/drivers) for further information.
 
 ### Debugging drivers
 
@@ -63,14 +63,3 @@ When driver specs are run with debug symbols they are launched with `gdbserver` 
 6. type `continue` to start program execution
 7. type `info inferiors` to see the list of running processes
 8. type `inferior 2` to switch to the driver process
-
-### Locally Exposed Services
-
-- Place Rest API (localhost:8082)
-- Place Auth (localhost:8081)
-- Place Core (localhost:8083)
-- Place Frontends (localhost:8087)
-- Rubbersoul (localhost:8084)
-- Elasticsearch (localhost:8090)
-- RethinkDB UI (localhost:8093)
-- Redis (localhost:7379) \[[UI available](https://redislabs.com/redisinsight/)\]
