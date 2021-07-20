@@ -25,7 +25,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Spin up environment
-        run: ./install
+        run: ./placeos start
         env:
           PLACEOS_TAG: ${{ matrix.version }}
       - name: Healthcheck
