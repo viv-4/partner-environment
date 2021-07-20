@@ -2,18 +2,26 @@ name: CI
 on: push
 jobs:
   test:
-    name: "Test Install - version: ${{ matrix.version }}, stable: ${{ matrix.stable }}"
-    runs-on: ubuntu-latest
+    name: "Test Install - os: ${{ matrix.os }}, version: ${{ matrix.version }}, stable: ${{ matrix.stable }}"
+    runs-on: ${{ matrix.os }}
     continue-on-error: ${{ !matrix.stable }}
     strategy:
+      fail-fast: false
       matrix:
         stable: [true]
+        os:
+          - ubuntu-18.04
+          - ubuntu-latest
         version:
           - 1.2107.0
           - 1.2105.3
         include:
           - version: nightly
             stable: false
+            os: ubuntu-18.04
+          - version: nightly
+            stable: false
+            os: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - name: Spin up environment
@@ -31,5 +39,7 @@ jobs:
           PLACE_TRIGGERS_TAG: ${{ matrix.version }}
           PLACE_STAFF_API_TAG: edge
           PLACE_NGINX_TAG: staff-api
-      - name: Healthcheck to confirm environment is up
+      - name: Healthcheck
         run: curl --insecure https://localhost:8443/api/engine/v2
+      - name: List service statuses
+        run: docker-compose ps
