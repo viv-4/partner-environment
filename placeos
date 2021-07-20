@@ -1,0 +1,231 @@
+#! /usr/bin/env bash
+
+set -euo pipefail
+trap "exit" 2
+trap 'pkill -P $$' SIGINT SIGTERM
+
+# Colours
+red='\033[0;31m'
+reset='\033[0m'
+
+base_path="$(dirname "${0}")"
+
+source "${base_path}/scripts/spinner.sh"
+
+mkdir -p "${base_path}/.logs"
+logfile="${base_path}/.logs/$(date +"%Y%m%d%H%M").log"
+
+abort() {
+    printf "░░░ ${red}${1}${reset}\n"
+    echo "░░░ Logs can be found in ${logfile}"
+    exit 1
+}
+
+run_or_abort() {
+    task="${1}"
+    start="${2}"
+    failure="${3}"
+
+    exit_code="0"
+    start_spinner "░░░ ${start}"
+    $(${task} >> ${logfile} 2>&1 ) || exit_code="$?"
+    stop_spinner $exit_code
+
+    [ $exit_code -eq "0" ] || abort "${failure}"
+}
+
+hard_restart() {
+    run_or_abort \
+        "${base_path}/scripts/run-sam-task drop:db" \
+        "Dropping RethinkDB tables..." \
+        "Failed to drop RethinkDB tables."
+
+    run_or_abort \
+        "${base_path}/scripts/run-sam-task drop:elastic" \
+        "Dropping Elasticsearch indices..." \
+        "Failed to drop Elasticsearch indices."
+
+    run_or_abort \
+        'COMPOSE_PROJECT_NAME=placeos docker-compose restart nginx' \
+        "Restarting nginx..." \
+        "Failed to restart nginx."
+}
+
+start_environment__usage() {
+    cat <<EOF
+Usage: ./placeos start [-h|--help]
+
+Start the PlaceOS environment
+
+Arguments:
+    --hard-reset            Reset the environment to a default state.
+    -s, --sentry            Set-up Sentry
+    -h, --help              Display this message
+EOF
+}
+
+start_environment() {
+    SERVICES=('')
+    hard_reset=false
+    setup_sentry=false
+    while [ ${#} -gt 0 ]; do
+        command="${1}"
+        shift
+        case ${command} in
+        --hard-reset)
+            read -p "${red}Warning:${reset} This will reset your environment. Would you like to continue (y/n)?" choice
+            case "${choice}" in
+            y | Y | YES | yes)
+                hard_reset=true
+                ;;
+            *)
+                echo "${red}exiting.${reset}"
+                exit 1
+                ;;
+            esac
+            ;;
+        -s | --sentry)
+            setup_sentry=true
+            SERVICES+=('-s')
+            ;;
+        -h | --help | help)
+            start_environment__usage
+            exit 0
+            ;;
+        *)
+            if [ -n "${command}" ]; then
+                echo "${red}Unknown option:${reset} ${command}"
+            else
+                start_environment__usage
+                exit 1
+            fi
+            ;;
+        esac
+    done
+
+    # Import environment
+    set -a
+    . ./.env
+    set +a
+
+    echo "░░░ Starting PlaceOS <${PLACEOS_TAG}>"
+    echo "░░░ For detailed logging, run \`tail -f ${logfile}\`"
+
+    PLACE_DOMAIN=${PLACE_DOMAIN:-"localhost:8443"}
+    PLACE_EMAIL=${PLACE_EMAIL:-"support@place.tech"}
+    PLACE_PASSWORD=${PLACE_PASSWORD:-"development"}
+
+    # run_or_abort \
+    #     "${base_path}/scripts/metricbeat" \
+    #     "Checking Host OS..." \
+    #     "Error occurred while checking Host OS."
+
+
+    run_or_abort \
+        "${base_path}/scripts/generate-secrets" \
+        "Generating secrets..." \
+        "Failed to generate secrets."
+
+    run_or_abort \
+        "${base_path}/scripts/start-services ${SERVICES[@]}" \
+        "Bringing up services..." \
+        "Failed to start services."
+
+    run_or_abort \
+        "${base_path}/scripts/init-influxdb" \
+        "Configuring InfluxDB..." \
+        "Failed to configure InfluxDB."
+
+    if [[ $setup_sentry == "true" ]]; then
+        run_or_abort \
+            "${base_path}/scripts/setup-sentry.sh" \
+            "Setting up sentry..." \
+            "Failed to setup sentry"
+
+        echo -e "\n░░░ Sentry setup complete. Login to http://$PLACE_DOMAIN on port 8989 with "
+        echo "support@place.tech:development"
+    else
+        echo "░░░ To setup sentry, run \`${base_path}/scripts/setup-sentry.sh\`"
+    fi
+
+    run_or_abort \
+        'sleep 5' \
+        "Waiting for services..." \
+        "."
+
+    [ ${hard_reset} == "true" ] && hard_reset
+
+    run_or_abort \
+        "${base_path}/scripts/run-init-container" \
+        "Initialising PlaceOS with default domain ($PLACE_DOMAIN)..." \
+        "Failed to create user entity."
+
+    run_or_abort \
+        "PLACE_DOMAIN=placeoslocal ${base_path}/scripts/run-init-container" \
+        "Setting up PlaceOS Staff API..." \
+        "Failed to setup PlaceOS Staff API."
+
+    echo -e "\n░░░ PlaceOS initialised. Login to https://$PLACE_DOMAIN/backoffice/ with"
+    echo "$PLACE_EMAIL:$PLACE_PASSWORD"
+}
+
+stop_environment() {
+    run_or_abort \
+        "docker-compose down" \
+        "Tearing down PlaceOS" \
+        "Failed to teardown PlaceOS"
+}
+
+update_environment() {
+    # The basic idea is that the script should not need git...
+    # Users will be able to to the next patch, or minor version
+    # Version info can be extracted from the heads of version branches in a file containing the version
+    abort "Not implemented."
+}
+
+usage() {
+    cat <<EOF
+Usage: ./placeos [-h|--help] [command]
+
+Helper script for interfacing with the PlaceOS Partner Environment
+
+Command:
+    start                   Start the environment.
+    stop                    Stops the environment.
+    update                  Update the environment.
+    help                    Display this message.
+
+Arguments:
+    -h, --help              Display this message.
+EOF
+}
+
+if [ $# -eq 0 ]; then
+    usage
+    exit 1
+fi
+
+command="$1"
+shift
+case $command in
+start)
+    start_environment "$@"
+    ;;
+stop)
+    stop_environment
+    ;;
+update)
+    update_environment
+    ;;
+-h | --help | help)
+    usage
+    ;;
+*)
+    if [ -n "$command" ]; then
+        echo "${red}Unknown command:${reset} $command"
+    else
+        usage
+        exit 1
+    fi
+    ;;
+esac

@@ -1,8 +1,9 @@
-drivers
-www
-data
-ssl
-.env.*
 *.swp
+.env.*
 .htpasswd*
+.logs
+data
 docker-compose.yml
+drivers
+ssl
+www
