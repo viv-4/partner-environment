@@ -85,6 +85,7 @@ services:
     hostname: api
     networks:
       placeos:
+    << : *logging-env
     depends_on:
       - auth
       - elastic
@@ -105,7 +106,6 @@ services:
       << : *redis-client-env
       << : *rethinkdb-client-env
       << : *rubber-soul-client-env
-    << : *logging-env
 
   auth: # Authentication Service
     image: placeos/auth:${PLACE_AUTH_TAG:-latest}
@@ -114,6 +114,7 @@ services:
     hostname: auth
     networks:
       placeos:
+    << : *logging-env
     depends_on:
       - rethink
       - redis
@@ -124,7 +125,6 @@ services:
       << : *redis-client-env
       COAUTH_NO_SSL: "true"
       TZ: $TZ
-    << : *logging-env
 
   core: # Module coordinator
     image: placeos/core:${PLACE_CORE_TAG:-latest}
@@ -133,12 +133,16 @@ services:
     hostname: core
     networks:
       placeos:
+    << : *logging-env
     depends_on:
       - etcd
       - redis
       - rethink
     ulimits:
       nofile: 40000
+      core:
+        soft: 0
+        hard: 0
     environment:
       # Service Hosts
       << : *etcd-client-env
@@ -146,7 +150,6 @@ services:
       << : *rethinkdb-client-env
       # Environment
       << : *deployment-env
-    << : *logging-env
 
   edge: # Module coordinator
     image: placeos/edge:${PLACE_EDGE_TAG:-latest}
@@ -155,12 +158,12 @@ services:
     hostname: edge
     networks:
       placeos:
+    << : *logging-env
     depends_on:
       - core
     environment:
       << : *edge-env
       << : *deployment-env
-    << : *logging-env
 
   frontends: # Frontend deployment service
     image: placeos/frontends:${PLACE_FRONTENDS_TAG:-latest}
@@ -169,6 +172,7 @@ services:
     hostname: frontends
     networks:
       placeos:
+    << : *logging-env
     volumes:
       - type: volume
         source: www
@@ -180,7 +184,6 @@ services:
       << : *rethinkdb-client-env
       # Environment
       << : *deployment-env
-    << : *logging-env
 
   source:
     image: docker.io/placeos/source:${PLACE_SOURCE_TAG:-latest}
@@ -188,6 +191,7 @@ services:
     container_name: source
     networks:
       placeos:
+    << : *logging-env
     depends_on:
       - redis
       - rethink
@@ -201,7 +205,6 @@ services:
       << : *rethinkdb-client-env
       # Environment
       << : *deployment-env
-    << : *logging-env
 
   triggers: # Conditional execution service
     image: placeos/triggers:${PLACE_TRIGGERS_TAG:-latest}
@@ -210,6 +213,7 @@ services:
     hostname: triggers
     networks:
       placeos:
+    << : *logging-env
     depends_on:
       - etcd
       - redis
@@ -222,7 +226,6 @@ services:
       << : *smtp-client-env
       # Environment
       << : *deployment-env
-    << : *logging-env
 
   postgres:  # Database used by Staff API
     image: postgres:${POSTGRES_VERSION:-13-alpine}
@@ -230,13 +233,13 @@ services:
     restart: unless-stopped
     networks:
       placeos:
+    << : *logging-env
     volumes:
       - postgres-data:/var/lib/postgresql/data
     environment:
       TZ: $TZ
       POSTGRES_USER: $POSTGRES_USER
       POSTGRES_PASSWORD: $POSTGRES_PASSWORD
-    << : *logging-env
 
   staff:  # Staff API
     image: placeos/staff-api:${PLACE_STAFF_API_TAG:-latest}
@@ -244,6 +247,7 @@ services:
     restart: unless-stopped
     networks:
       placeos:
+    << : *logging-env
     depends_on:
       - postgres
     env_file:
@@ -255,7 +259,6 @@ services:
       PG_DATABASE_URL: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres/placeos"
       PLACE_URI: "https://nginx"
       SSL_VERIFY_NONE: "true"
-    << : *logging-env
 
   # Support
 
@@ -265,6 +268,7 @@ services:
     restart: on-failure
     networks:
       placeos:
+    << : *logging-env
     depends_on:
       - rubber-soul
     environment:
@@ -275,13 +279,12 @@ services:
       PLACE_USERNAME: ${PLACE_USERNAME:-Place Support (localhost:8443)}
       PLACE_EMAIL: ${PLACE_EMAIL:-support@place.tech}
       PLACE_PASSWORD: ${PLACE_PASSWORD:-development}
-      PLACE_TLS: ${PLACE_TLS:-true}
+      PLACE_TLS: "${PLACE_TLS:-true}"
       # Service Hosts
       << : *rethinkdb-client-env
       << : *elastic-client-env
       # Environment
       << : *deployment-env
-    << : *logging-env
 
   rubber-soul: # RethinkDB to Elasticsearch Service
     image: placeos/rubber-soul:${PLACE_RUBBER_SOUL_TAG:-latest}
@@ -290,6 +293,7 @@ services:
     hostname: rubber-soul
     networks:
       placeos:
+    << : *logging-env
     depends_on:
       - elastic
       - rethink
@@ -299,7 +303,6 @@ services:
       << : *elastic-client-env
       # Environment
       << : *deployment-env
-    << : *logging-env
 
   dispatch: # Engine driver server registration and data routing
     image: placeos/dispatch:${PLACE_DISPATCH_TAG:-latest}
@@ -308,9 +311,9 @@ services:
     hostname: dispatch
     networks:
       placeos:
+    << : *logging-env
     environment:
       SERVER_SECRET: ${PLACE_SERVER_SECRET:-development}
-    << : *logging-env
 
   # Resources
 
@@ -321,6 +324,7 @@ services:
     hostname: elastic
     networks:
       placeos:
+    << : *logging-env
     volumes:
       - type: volume
         source: elastic-data
@@ -330,7 +334,6 @@ services:
       cluster.routing.allocation.disk.threshold_enabled: "false"
       discovery.type: single-node
       TZ: $TZ
-    << : *logging-env
 
   etcd:
     image: bitnami/etcd:${ETCD_VERSION:-3}
@@ -339,10 +342,10 @@ services:
     hostname: etcd
     networks:
       placeos:
+    << : *logging-env
     environment:
       ALLOW_NONE_AUTHENTICATION: "yes"
       TZ: $TZ
-    << : *logging-env
 
   influxdb:
     image: quay.io/influxdb/influxdb:${INFLUXDB_IMAGE_TAG:-v2.0.7}
@@ -350,6 +353,7 @@ services:
     restart: always
     networks:
       placeos:
+    << : *logging-env
     hostname: influx
     healthcheck:
       test: influx bucket list
@@ -358,7 +362,6 @@ services:
         source: influx-data
         target: /root/.influxdbv2
     command: "--reporting-disabled"
-    << : *logging-env
 
   nginx:
     image: placeos/nginx:${PLACE_NGINX_TAG:-nightly}
@@ -370,6 +373,7 @@ services:
       - 8443:443
     networks:
       placeos:
+    << : *logging-env
     depends_on:
       - auth
       - api
@@ -386,7 +390,6 @@ services:
     environment:
       TZ: $TZ
       PLACE_DOMAIN: ${PLACE_DOMAIN:-localhost:8443}
-    << : *logging-env
 
   redis:
     image: eqalpha/keydb
@@ -395,13 +398,13 @@ services:
     hostname: redis
     networks:
       placeos:
+    << : *logging-env
     volumes:
       - type: volume
         source: redis-data
         target: /data
     environment:
       TZ: $TZ
-    << : *logging-env
 
   rethink:
     image: rethinkdb:${RETHINKDB_VERSION:-2.4}
@@ -410,10 +413,10 @@ services:
     hostname: rethink
     networks:
       placeos:
+    << : *logging-env
     volumes:
       - type: volume
         source: rethink-data
         target: /data/rethinkdb_data
     environment:
       TZ: $TZ
-    << : *logging-env
