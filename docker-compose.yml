@@ -139,9 +139,6 @@ services:
       - rethink
     ulimits:
       nofile: 40000
-      core: 
-        soft: "0"
-        hard: "0"
     environment:
       # Service Hosts
       << : *etcd-client-env
