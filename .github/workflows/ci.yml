@@ -13,8 +13,8 @@ jobs:
           - ubuntu-18.04
           - ubuntu-latest
         version:
-          - 1.2107.0
-          - 1.2105.3
+          - placeos-1.2107.1
+          - placeos-1.2105.3
         include:
           - version: nightly
             stable: false
@@ -27,18 +27,7 @@ jobs:
       - name: Spin up environment
         run: ./install
         env:
-          PLACE_AUTH_TAG: ${{ matrix.version }}
-          PLACE_CORE_TAG: ${{ matrix.version }}
-          PLACE_DISPATCH_TAG: ${{ matrix.version }}
-          PLACE_EDGE_TAG: ${{ matrix.version }}
-          PLACE_FRONTENDS_TAG: ${{ matrix.version }}
-          PLACE_INIT_TAG: ${{ matrix.version }}
-          PLACE_REST_API_TAG: ${{ matrix.version }}
-          PLACE_RUBBER_SOUL_TAG: ${{ matrix.version }}
-          PLACE_SOURCE_TAG: ${{ matrix.version }}
-          PLACE_TRIGGERS_TAG: ${{ matrix.version }}
-          PLACE_STAFF_API_TAG: edge
-          PLACE_NGINX_TAG: staff-api
+          PLACEOS_TAG: ${{ matrix.version }}
       - name: Healthcheck
         run: curl --insecure https://localhost:8443/api/engine/v2
       - name: List service statuses
