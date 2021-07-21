@@ -115,6 +115,8 @@ start_environment() {
     PLACE_EMAIL=${PLACE_EMAIL:-"support@place.tech"}
     PLACE_PASSWORD=${PLACE_PASSWORD:-"development"}
 
+    BASE_DOMAIN=${PLACE_DOMAIN}
+
     # run_or_abort \
     #     "${base_path}/scripts/metricbeat" \
     #     "Checking Host OS..." \
@@ -141,7 +143,7 @@ start_environment() {
             "Setting up sentry..." \
             "Failed to setup sentry"
 
-        echo -e "\n░░░ Sentry setup complete. Login to http://$PLACE_DOMAIN on port 8989 with "
+        echo -e "\n░░░ Sentry setup complete. Login to http://$BASE_DOMAIN on port 8989 with "
         echo "support@place.tech:development"
     else
         echo "░░░ To setup sentry, run \`${base_path}/scripts/setup-sentry.sh\`"
@@ -151,7 +153,7 @@ start_environment() {
 
     run_or_abort \
         "${base_path}/scripts/run-init-container" \
-        "Initialising PlaceOS with default domain ($PLACE_DOMAIN)..." \
+        "Initialising PlaceOS with default domain ($BASE_DOMAIN)..." \
         "Failed to create user entity."
 
     PLACEOS_DOMAIN=placeos.local:8443
@@ -160,7 +162,7 @@ start_environment() {
         "Setting up PlaceOS Staff API..." \
         "Failed to setup PlaceOS Staff API."
 
-    echo -e "\n░░░ PlaceOS initialised. Login to https://$PLACE_DOMAIN/backoffice/ with"
+    echo -e "\n░░░ PlaceOS initialised. Login to https://$BASE_DOMAIN/backoffice/ with"
     echo "$PLACE_EMAIL:$PLACE_PASSWORD"
 }
 
