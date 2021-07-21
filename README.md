@@ -47,7 +47,6 @@ Helper script for interfacing with the PlaceOS Partner Environment
 Command:
     start                   Start the environment.
     stop                    Stops the environment.
-    update                  Update the environment.
     help                    Display this message.
 ```
 
@@ -66,11 +65,14 @@ Arguments:
 
 ### `$ ./placeos stop`
 
- Stops the environment.
+```shell-session
+Usage: ./placeos stop [-h|--help]
 
-### `$ ./placeos update`
+Stop the PlaceOS environment
 
-**TODO**
+Arguments:
+    -h, --help              Display this message
+```
 
 ## Drivers
 

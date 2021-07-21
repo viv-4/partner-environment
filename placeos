@@ -264,7 +264,6 @@ Helper script for interfacing with the PlaceOS Partner Environment
 Command:
     start                   Start the environment.
     stop                    Stops the environment.
-    update                  Update the environment.
     help                    Display this message.
 
 Arguments:
