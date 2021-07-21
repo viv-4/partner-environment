@@ -171,14 +171,8 @@ start_environment() {
         "Initialising PlaceOS with default domain ($BASE_DOMAIN)..." \
         "Failed to create user entity."
 
-    PLACEOS_DOMAIN=placeos.local:8443
-    run_or_abort \
-        "${base_path}/scripts/run-init-container" \
-        "Setting up PlaceOS Staff API..." \
-        "Failed to setup PlaceOS Staff API."
-
-    echo -e "\n░░░ PlaceOS initialised. Login to https://$BASE_DOMAIN/backoffice/ with"
-    echo "$PLACE_EMAIL:$PLACE_PASSWORD"
+    echo "░░░ PlaceOS initialised. Login to https://$BASE_DOMAIN/backoffice/ with..."
+    echo "░░░ $PLACE_EMAIL:$PLACE_PASSWORD"
 }
 
 stop_environment__usage() {
