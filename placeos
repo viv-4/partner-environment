@@ -166,14 +166,74 @@ start_environment() {
     echo "$PLACE_EMAIL:$PLACE_PASSWORD"
 }
 
+stop_environment__usage() {
+    cat <<EOF
+Usage: ./placeos stop [-h|--help]
+
+Stop the PlaceOS environment
+
+Arguments:
+    -h, --help              Display this message
+EOF
+}
+
 stop_environment() {
+    while [ ${#} -gt 0 ]; do
+        command="${1}"
+        shift
+        case ${command} in
+        -h | --help | help)
+            stop_environment__usage
+            exit 0
+            ;;
+        *)
+            if [ -n "${command}" ]; then
+                echo "${red}Unknown option:${reset} ${command}"
+            else
+                stop_environment__usage
+                exit 1
+            fi
+            ;;
+        esac
+    done
+
     run_or_abort \
         "docker-compose down" \
         "Tearing down PlaceOS" \
         "Failed to teardown PlaceOS"
 }
 
+update_environment__usage() {
+    cat <<EOF
+Usage: ./placeos update [-h|--help]
+
+Update the PlaceOS environment
+
+Arguments:
+    -h, --help              Display this message
+EOF
+}
+
 update_environment() {
+    while [ ${#} -gt 0 ]; do
+        command="${1}"
+        shift
+        case ${command} in
+        -h | --help | help)
+            update_environment__usage
+            exit 0
+            ;;
+        *)
+            if [ -n "${command}" ]; then
+                echo "${red}Unknown option:${reset} ${command}"
+            else
+                update_environment__usage
+                exit 1
+            fi
+            ;;
+        esac
+    done
+
     # The basic idea is that the script should not need git...
     # Users will be able to to the next patch, or minor version
     # Version info can be extracted from the heads of version branches in a file containing the version
@@ -209,10 +269,10 @@ start)
     start_environment "$@"
     ;;
 stop)
-    stop_environment
+    stop_environment "$@"
     ;;
 update)
-    update_environment
+    update_environment "$@"
     ;;
 -h | --help | help)
     usage
