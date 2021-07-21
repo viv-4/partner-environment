@@ -4,29 +4,31 @@
 
 For use when testing, improving or experimenting with PlaceOS on a local machine.
 Use it for driver, frontend, api and infra development. Treat it as insecure.
-When finished dev work for the day, stop the containers with `docker-compose down`
+
+When finished dev work for the day, stop the containers with `./placeos stop`
 
 *NOT* for production use.
 
 ## Installation
 
-1. `$ ./install`
+1. `$ ./placeos start`
 1. Navigate to https://localhost:8443/backoffice
-1. Login with `support@place.tech`:`development`
+1. Login with the credentials output by the CLI
 
 ## Configuration
 
 - `PLACE_EMAIL`,`PLACE_PASSWORD`: Create an initial admin user via these environment variables
 - `PLACE_DOMAIN`: Set an alternate application domain, defaults to `localhost:8443`
 
-### Dependencies
+## Dependencies
 
-These will need to be installed prior to running `./install`:
+These will need to be installed prior to running `./placeos start`:
+
 - [docker](https://www.docker.com/)
 - [docker-compose](https://github.com/docker/compose)
 - [git](https://git-scm.com/)
 
-### Optional tools (recommended)
+### Optional tools
 
 - [watchexec](https://github.com/watchexec/watchexec) to run watch scripts (see `scripts/watch-crystal`)
 - [lazydocker](https://github.com/jesseduffield/lazydocker) for easy docker monitoring
@@ -35,31 +37,41 @@ These will need to be installed prior to running `./install`:
 ## Usage
 
 1. Clone the environment: https://github.com/place-labs/partner-environment.git
-2. Run the install script: `./install` (use this to update repositories and images too)
+1. Run the install script: `./placeos start` (use this tool to update PlaceOS Version)
 
-`install` (_should only be run once_) exposes additional services behind flags...
-- Use the `-s` or `--sentry` flag to run Sentry
+```shell-session
+Usage: ./placeos [-h|--help] [command]
 
-### Restart
+Helper script for interfacing with the PlaceOS Partner Environment
 
-`$ ./restart`
+Command:
+    start                   Start the environment.
+    stop                    Stops the environment.
+    update                  Update the environment.
+    help                    Display this message.
+```
 
-If you need to reset the state of the application, pass `--reset` or `-r`
+### `$ ./placeos start`
 
-### Developing drivers
+```shell-session
+Usage: ./placeos start [-h|--help]
+
+Start the PlaceOS environment
+
+Arguments:
+    --hard-reset            Reset the environment to a default state.
+    -s, --sentry            Set-up Sentry
+    -h, --help              Display this message
+```
+
+### `$ ./placeos stop`
+
+ Stops the environment.
+
+### `$ ./placeos update`
+
+**TODO**
+
+## Drivers
 
 See the [PlaceOS Drivers repository](https://github.com/PlaceOS/drivers) for further information.
-
-### Debugging drivers
-
-When driver specs are run with debug symbols they are launched with `gdbserver` for remote debugging.
-
-1. Optionally add a `debugger` keyword to either your spec or driver code.
-   * This is a compiled in breakpoint
-2. run the spec, compiled with debug symbols
-3. run `gdb` in a local terminal window
-4. connect to the spec remote debug server `target remote localhost:4444`
-5. to debug the driver, not just the spec use `set detach-on-fork on`
-6. type `continue` to start program execution
-7. type `info inferiors` to see the list of running processes
-8. type `inferior 2` to switch to the driver process
