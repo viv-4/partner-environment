@@ -28,6 +28,12 @@ jobs:
         run: ./placeos start
         env:
           PLACEOS_TAG: ${{ matrix.version }}
+      - name: Upload logs
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v2
+        with:
+          name: logs-${{ matrix.os }}-${{ matrix.version }}-${{ github.sha }}
+          path: .logs/*.log
       - name: Healthcheck
         run: curl --insecure https://localhost:8443/api/engine/v2
       - name: List service statuses
