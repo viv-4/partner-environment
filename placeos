@@ -28,7 +28,7 @@ run_or_abort() {
 
     exit_code="0"
     start_spinner "░░░ ${start}"
-    $(${task} >> ${logfile} 2>&1 ) || exit_code="$?"
+    $(${task} >>${logfile} 2>&1) || exit_code="$?"
     stop_spinner $exit_code
 
     [ $exit_code -eq "0" ] || abort "${failure}"
@@ -119,7 +119,6 @@ start_environment() {
     #     "${base_path}/scripts/metricbeat" \
     #     "Checking Host OS..." \
     #     "Error occurred while checking Host OS."
-
 
     run_or_abort \
         "${base_path}/scripts/generate-secrets" \
