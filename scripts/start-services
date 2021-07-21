@@ -21,4 +21,4 @@ done
 
 docker-compose pull -q
 
-docker-compose ${COMPOSE_FILES[@]} up -d --force-recreate
+docker-compose ${COMPOSE_FILES[@]} up -d

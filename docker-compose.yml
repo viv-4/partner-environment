@@ -87,12 +87,18 @@ services:
       placeos:
     << : *logging-env
     depends_on:
-      - auth
-      - elastic
-      - etcd
-      - redis
-      - rethink
-      - rubber-soul
+      auth:
+        condition: service_healthy
+      elastic:
+        condition: service_healthy
+      etcd:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rubber-soul:
+        condition: service_healthy
+      rethink:
+        condition: service_healthy
     env_file:
       - *jwt-public
       - *jwt-secret
@@ -114,6 +120,8 @@ services:
     hostname: auth
     networks:
       placeos:
+    healthcheck:
+      test:  wget --no-verbose -q --spider http://0.0.0.0:8080/auth/authority?health=true
     << : *logging-env
     depends_on:
       - rethink
@@ -135,9 +143,12 @@ services:
       placeos:
     << : *logging-env
     depends_on:
-      - etcd
-      - redis
-      - rethink
+      etcd:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rethink:
+        condition: service_healthy
     ulimits:
       nofile: 40000
       core:
@@ -270,7 +281,10 @@ services:
       placeos:
     << : *logging-env
     depends_on:
-      - rubber-soul
+      rubber-soul:
+        condition: service_healthy
+      rethink:
+        condition: service_healthy
     environment:
       # User/Application Configuration
       PLACE_DOMAIN: ${PLACE_DOMAIN:-localhost:8443}
@@ -295,8 +309,10 @@ services:
       placeos:
     << : *logging-env
     depends_on:
-      - elastic
-      - rethink
+      elastic:
+        condition: service_healthy
+      rethink:
+        condition: service_healthy
     environment:
       # Service Hosts
       << : *rethinkdb-client-env
@@ -322,6 +338,8 @@ services:
     restart: always
     container_name: elastic
     hostname: elastic
+    healthcheck:
+      test: wget -q --no-verbose --tries=1 --spider http://localhost:9200/_cat/health
     networks:
       placeos:
     << : *logging-env
@@ -340,6 +358,8 @@ services:
     restart: always
     container_name: etcd
     hostname: etcd
+    healthcheck:
+      test: etcdctl endpoint health
     networks:
       placeos:
     << : *logging-env
@@ -396,6 +416,8 @@ services:
     restart: always
     container_name: redis
     hostname: redis
+    healthcheck:
+      test: redis-cli ping
     networks:
       placeos:
     << : *logging-env
@@ -411,6 +433,9 @@ services:
     restart: always
     container_name: rethink
     hostname: rethink
+    healthcheck:
+      # Check if the DB's port is open
+      test: "bash -c ': &>/dev/null </dev/tcp/127.0.0.1/28015'"
     networks:
       placeos:
     << : *logging-env

@@ -34,7 +34,7 @@ jobs:
         with:
           name: logs-${{ matrix.os }}-${{ matrix.version }}-${{ github.sha }}
           path: .logs/*.log
-      - name: Healthcheck
-        run: curl --insecure https://localhost:8443/api/engine/v2
       - name: List service statuses
         run: docker-compose ps
+      - name: Healthcheck
+        run: curl --retry 5 --insecure https://localhost:8443/api/engine/v2

@@ -147,11 +147,6 @@ start_environment() {
         echo "░░░ To setup sentry, run \`${base_path}/scripts/setup-sentry.sh\`"
     fi
 
-    run_or_abort \
-        'sleep 5' \
-        "Waiting for services..." \
-        "."
-
     [ ${hard_reset} == "true" ] && hard_reset
 
     run_or_abort \
@@ -159,8 +154,9 @@ start_environment() {
         "Initialising PlaceOS with default domain ($PLACE_DOMAIN)..." \
         "Failed to create user entity."
 
+    PLACEOS_DOMAIN=placeos.local:8443
     run_or_abort \
-        "PLACE_DOMAIN=placeoslocal ${base_path}/scripts/run-init-container" \
+        "${base_path}/scripts/run-init-container" \
         "Setting up PlaceOS Staff API..." \
         "Failed to setup PlaceOS Staff API."
 
