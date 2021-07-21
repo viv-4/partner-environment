@@ -1,8 +1,10 @@
 #! /usr/bin/env bash
 
 set -euo pipefail
-trap "exit" 2
+
+# Kill child processes on signals
 trap 'pkill -P $$' SIGINT SIGTERM
+trap "exit" 2
 
 # Colours
 red='\033[0;31m'
@@ -14,6 +16,8 @@ source "${base_path}/scripts/spinner.sh"
 
 mkdir -p "${base_path}/.logs"
 logfile="${base_path}/.logs/$(date +"%Y%m%d%H%M").log"
+
+COMPOSE_PROJECT_NAME=placeos
 
 banner() {
 echo
@@ -48,6 +52,9 @@ run_or_abort() {
 }
 
 hard_reset() {
+    # TODO: drop influxdb tables
+    # TODO: clear redis
+
     run_or_abort \
         "${base_path}/scripts/run-sam-task drop:db" \
         "Dropping RethinkDB tables..." \
@@ -59,7 +66,7 @@ hard_reset() {
         "Failed to drop Elasticsearch indices."
 
     run_or_abort \
-        'COMPOSE_PROJECT_NAME=placeos docker-compose restart nginx' \
+        'docker-compose restart nginx' \
         "Restarting nginx..." \
         "Failed to restart nginx."
 }
@@ -158,8 +165,8 @@ start_environment() {
             "Setting up sentry..." \
             "Failed to setup sentry"
 
-        echo -e "\n░░░ Sentry setup complete. Login to http://$BASE_DOMAIN on port 8989 with "
-        echo "support@place.tech:development"
+        echo "░░░ Sentry setup complete. Login to http://$BASE_DOMAIN on port 8989 with..."
+        echo "░░░ ${PLACE_EMAIL}:${PLACE_PASSWORD}"
     else
         echo "░░░ To setup sentry, run \`${base_path}/scripts/setup-sentry.sh\`"
     fi
