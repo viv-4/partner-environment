@@ -1,40 +1,43 @@
 #! /usr/bin/env bash
 
 banner() {
-echo
-echo '░░░░░░░\  ░░\                                ░░░░░░\   ░░░░░░\'
-echo '░░  __░░\ ░░ |                              ░░  __░░\ ░░  __░░\'
-echo '░░ |  ░░ |░░ | ░░░░░░\   ░░░░░░░\  ░░░░░░\  ░░ /  ░░ |░░ /  \__|'
-echo '░░░░░░░  |░░ | \____░░\ ░░  _____|░░  __░░\ ░░ |  ░░ |\░░░░░░\'
-echo '░░  ____/ ░░ | ░░░░░░░ |░░ /      ░░░░░░░░ |░░ |  ░░ | \____░░\'
-echo '░░ |      ░░ |░░  __░░ |░░ |      ░░   ____|░░ |  ░░ |░░\   ░░ |'
-echo '░░ |      ░░ |\░░░░░░░ |\░░░░░░░\ \░░░░░░░\  ░░░░░░  |\░░░░░░  |'
-echo '\__|      \__| \_______| \_______| \_______| \______/  \______/'
-echo
+    echo
+    echo '░░░░░░░\  ░░\                                ░░░░░░\   ░░░░░░\'
+    echo '░░  __░░\ ░░ |                              ░░  __░░\ ░░  __░░\'
+    echo '░░ |  ░░ |░░ | ░░░░░░\   ░░░░░░░\  ░░░░░░\  ░░ /  ░░ |░░ /  \__|'
+    echo '░░░░░░░  |░░ | \____░░\ ░░  _____|░░  __░░\ ░░ |  ░░ |\░░░░░░\'
+    echo '░░  ____/ ░░ | ░░░░░░░ |░░ /      ░░░░░░░░ |░░ |  ░░ | \____░░\'
+    echo '░░ |      ░░ |░░  __░░ |░░ |      ░░   ____|░░ |  ░░ |░░\   ░░ |'
+    echo '░░ |      ░░ |\░░░░░░░ |\░░░░░░░\ \░░░░░░░\  ░░░░░░  |\░░░░░░  |'
+    echo '\__|      \__| \_______| \_______| \_______| \______/  \______/'
+    echo
 }
 
+# The bash hail mary (exit on failure, unset variables, fail pipe composition early)
 set -euo pipefail
 
 # Kill child processes on signals
 trap 'pkill -P $$' SIGINT SIGTERM
-trap "exit" 2
 
 # Colours
 red='\033[0;31m'
+green='\033[0;32m'
 reset='\033[0m'
 
+# Path of directory containing the script
 base_path="$(dirname "${0}")"
 
+# Terminal spinner
 source "${base_path}/scripts/spinner.sh"
 
+# Create a logfile
 mkdir -p "${base_path}/.logs"
 logfile="${base_path}/.logs/$(date +"%Y%m%d%H%M").log"
 
 COMPOSE_PROJECT_NAME=placeos
 
-
 abort() {
-    echo "░░░ ${red}${1}${reset}"
+    echo -e "░░░ ${red}${1}${reset}"
     echo "░░░ Logs can be found in ${logfile}"
     exit 1
 }
@@ -46,7 +49,7 @@ run_or_abort() {
 
     exit_code="0"
     start_spinner "░░░ ${start}"
-    $(${task} >>${logfile} 2>&1) || exit_code="$?"
+    $(${task} >> ${logfile} 2>&1) || exit_code="$?"
     stop_spinner $exit_code
 
     [ $exit_code -eq "0" ] || abort "${failure}"
@@ -79,6 +82,7 @@ Usage: ./placeos start [-h|--help]
 Start the PlaceOS environment
 
 Arguments:
+    --email EMAIL           Email to setup an admin account for.
     --hard-reset            Reset the environment to a default state.
     -s, --sentry            Set-up Sentry
     -h, --help              Display this message
@@ -89,21 +93,25 @@ start_environment() {
     SERVICES=('')
     hard_reset=false
     setup_sentry=false
+    email_argument=""
     while [ ${#} -gt 0 ]; do
         command="${1}"
         shift
         case ${command} in
         --hard-reset)
-            read -p "${red}Warning:${reset} This will reset your environment. Would you like to continue (y/n)?" choice
+            read -rp "░░░ $(echo -e "${red}Warning:${reset}") This will reset your environment. Would you like to continue (y/n)? " choice
             case "${choice}" in
             y | Y | YES | yes)
                 hard_reset=true
                 ;;
             *)
-                echo "${red}exiting.${reset}"
-                exit 1
+                abort "Exiting."
                 ;;
             esac
+            ;;
+        --email)
+            email_argument="${1}"
+            shift
             ;;
         -s | --sentry)
             setup_sentry=true
@@ -115,7 +123,7 @@ start_environment() {
             ;;
         *)
             if [ -n "${command}" ]; then
-                echo "${red}Unknown option:${reset} ${command}"
+                echo -e "░░░ ${red}Unknown option:${reset} ${command}"
             else
                 start_environment__usage
                 exit 1
@@ -126,6 +134,9 @@ start_environment() {
 
     banner
 
+    PLACE_EMAIL=""
+    PLACE_USERNAME=""
+
     # Import environment
     set -a
     . ./.env
@@ -134,11 +145,43 @@ start_environment() {
     echo "░░░ Starting PlaceOS <${PLACEOS_TAG}>"
     echo "░░░ For detailed logging, run \`tail -f ${logfile}\`"
 
-    PLACE_DOMAIN=${PLACE_DOMAIN:-"localhost:8443"}
-    PLACE_EMAIL=${PLACE_EMAIL:-"support@place.tech"}
-    PLACE_PASSWORD=${PLACE_PASSWORD:-"development"}
+    EMAIL_ENV="${base_path}/.env.email"
 
-    BASE_DOMAIN=${PLACE_DOMAIN}
+    set -a
+    if [ -f "${EMAIL_ENV}" ]; then
+        . ${EMAIL_ENV}
+    elif [ -n "${email_argument}" ]; then
+        # Override env with CLI arguments
+        PLACE_EMAIL=${email_argument}
+        # Write the email so as to not prompt the user again.
+        echo "PLACE_EMAIL=${PLACE_EMAIL}" >${EMAIL_ENV}
+    fi
+    set +a
+
+    if [ -z "${PLACE_USERNAME}" ]; then
+        # Attempt to set the username to that in git config
+        PLACE_USERNAME=${PLACE_USERNAME:-"$(git config user.name 2>/dev/null)"}
+        PLACE_USERNAME=${PLACE_USERNAME:-"Place Support"}
+    fi
+
+    if [ -z "${PLACE_EMAIL}" ]; then
+        # Prompt the user for their email if not already set via `.env` or argument
+        PLACE_EMAIL=${PLACE_EMAIL:-"$(git config user.email 2>/dev/null)"}
+        PLACE_EMAIL=${PLACE_EMAIL:-"support@place.tech"}
+
+        read -rp "░░░ Please enter an email ($(echo -e "${green}default:${reset}") ${PLACE_EMAIL}): " choice
+        if [ -n "${choice}" ]; then
+            PLACE_EMAIL=${choice}
+        fi
+
+        # Write the email so as to not prompt the user again.
+        echo "PLACE_EMAIL=${PLACE_EMAIL}" >${EMAIL_ENV}
+    fi
+
+    PLACE_DOMAIN=${PLACE_DOMAIN:-"localhost:8443"}
+
+    # TODO: Autogenerate the password
+    PLACE_PASSWORD=${PLACE_PASSWORD:-"development"}
 
     # run_or_abort \
     #     "${base_path}/scripts/metricbeat" \
@@ -166,7 +209,7 @@ start_environment() {
             "Setting up sentry..." \
             "Failed to setup sentry"
 
-        echo "░░░ Sentry setup complete. Login to http://$BASE_DOMAIN on port 8989 with..."
+        echo "░░░ Sentry setup complete. Login to http://$PLACE_DOMAIN on port 8989 with..."
         echo "░░░ ${PLACE_EMAIL}:${PLACE_PASSWORD}"
     else
         echo "░░░ To setup sentry, run \`${base_path}/scripts/setup-sentry.sh\`"
@@ -176,10 +219,10 @@ start_environment() {
 
     run_or_abort \
         "${base_path}/scripts/run-init-container" \
-        "Initialising PlaceOS with default domain ($BASE_DOMAIN)..." \
+        "Initialising PlaceOS with default domain ($PLACE_DOMAIN)..." \
         "Failed to create user entity."
 
-    echo "░░░ PlaceOS initialised. Login to https://$BASE_DOMAIN/backoffice/ with..."
+    echo "░░░ PlaceOS initialised. Login to https://$PLACE_DOMAIN/backoffice/ with..."
     echo "░░░ $PLACE_EMAIL:$PLACE_PASSWORD"
 }
 
@@ -205,7 +248,7 @@ stop_environment() {
             ;;
         *)
             if [ -n "${command}" ]; then
-                echo "${red}Unknown option:${reset} ${command}"
+                echo -e "░░░ ${red}Unknown option:${reset} ${command}"
             else
                 stop_environment__usage
                 exit 1
@@ -242,7 +285,7 @@ update_environment() {
             ;;
         *)
             if [ -n "${command}" ]; then
-                echo "${red}Unknown option:${reset} ${command}"
+                echo -e "░░░ ${red}Unknown option:${reset} ${command}"
             else
                 update_environment__usage
                 exit 1
@@ -295,7 +338,7 @@ update)
     ;;
 *)
     if [ -n "$command" ]; then
-        echo "${red}Unknown command:${reset} $command"
+        echo -e "░░░ ${red}Unknown command:${reset} $command"
     else
         usage
         exit 1
