@@ -121,6 +121,7 @@ services:
     networks:
       placeos:
     healthcheck:
+      # TODO: Remove after placeos-1.2109.0
       test:  wget --no-verbose -q --spider http://0.0.0.0:8080/auth/authority?health=true
     << : *logging-env
     depends_on:
