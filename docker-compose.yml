@@ -339,7 +339,7 @@ services:
     container_name: elastic
     hostname: elastic
     healthcheck:
-      test: wget -q --no-verbose --tries=1 --spider http://localhost:9200/_cat/health
+      test: docker-healthcheck
     networks:
       placeos:
     << : *logging-env
