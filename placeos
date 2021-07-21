@@ -15,6 +15,19 @@ source "${base_path}/scripts/spinner.sh"
 mkdir -p "${base_path}/.logs"
 logfile="${base_path}/.logs/$(date +"%Y%m%d%H%M").log"
 
+banner() {
+echo
+echo '░░░░░░░\  ░░\                                ░░░░░░\   ░░░░░░\'
+echo '░░  __░░\ ░░ |                              ░░  __░░\ ░░  __░░\'
+echo '░░ |  ░░ |░░ | ░░░░░░\   ░░░░░░░\  ░░░░░░\  ░░ /  ░░ |░░ /  \__|'
+echo '░░░░░░░  |░░ | \____░░\ ░░  _____|░░  __░░\ ░░ |  ░░ |\░░░░░░\'
+echo '░░  ____/ ░░ | ░░░░░░░ |░░ /      ░░░░░░░░ |░░ |  ░░ | \____░░\'
+echo '░░ |      ░░ |░░  __░░ |░░ |      ░░   ____|░░ |  ░░ |░░\   ░░ |'
+echo '░░ |      ░░ |\░░░░░░░ |\░░░░░░░\ \░░░░░░░\  ░░░░░░  |\░░░░░░  |'
+echo '\__|      \__| \_______| \_______| \_______| \______/  \______/'
+echo
+}
+
 abort() {
     printf "░░░ ${red}${1}${reset}\n"
     echo "░░░ Logs can be found in ${logfile}"
@@ -102,6 +115,8 @@ start_environment() {
             ;;
         esac
     done
+
+    banner
 
     # Import environment
     set -a
