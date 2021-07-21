@@ -34,7 +34,7 @@ run_or_abort() {
     [ $exit_code -eq "0" ] || abort "${failure}"
 }
 
-hard_restart() {
+hard_reset() {
     run_or_abort \
         "${base_path}/scripts/run-sam-task drop:db" \
         "Dropping RethinkDB tables..." \
