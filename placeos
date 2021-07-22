@@ -166,13 +166,13 @@ start_environment() {
 
     if [ -z "${PLACE_USERNAME}" ]; then
         # Attempt to set the username to that in git config
-        PLACE_USERNAME=${PLACE_USERNAME:-"$(git config user.name 2>/dev/null)"}
+        PLACE_USERNAME=${PLACE_USERNAME:-"$(git config user.name 2>/dev/null || exit 0)"}
         PLACE_USERNAME=${PLACE_USERNAME:-"Place Support"}
     fi
 
     if [ -z "${PLACE_EMAIL}" ]; then
         # Prompt the user for their email if not already set via `.env` or argument
-        PLACE_EMAIL=${PLACE_EMAIL:-"$(git config user.email 2>/dev/null)"}
+        PLACE_EMAIL=${PLACE_EMAIL:-"$(git config user.email 2>/dev/null || exit 0)"}
         PLACE_EMAIL=${PLACE_EMAIL:-"support@place.tech"}
 
         read -rp "░░░ Please enter an email ($(echo -e "${green}default:${reset}") ${PLACE_EMAIL}): " choice
