@@ -136,7 +136,7 @@ start_environment() {
 
     # We cannot do substition with defaults in the .env
     # TODO: Remove after TAG/VERSION are the same thing.
-    EXISTING_PLACEOS_TAG=${PLACEOS_TAG}
+    EXISTING_PLACEOS_TAG=${PLACEOS_TAG:-""}
 
     PLACE_EMAIL=""
     PLACE_USERNAME=""
