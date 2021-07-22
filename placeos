@@ -52,7 +52,7 @@ run_or_abort() {
     $(${task} >> ${logfile} 2>&1) || exit_code="$?"
     stop_spinner $exit_code
 
-    [ $exit_code -eq "0" ] || abort "${failure}"
+    [ $exit_code -eq "0" ] || abort "${failure:-"${task} failed with ${exit_code}"}"
 }
 
 hard_reset() {
@@ -134,6 +134,10 @@ start_environment() {
 
     banner
 
+    # We cannot do substition with defaults in the .env
+    # TODO: Remove after TAG/VERSION are the same thing.
+    EXISTING_PLACEOS_TAG=${PLACEOS_TAG}
+
     PLACE_EMAIL=""
     PLACE_USERNAME=""
 
@@ -141,6 +145,8 @@ start_environment() {
     set -a
     . ./.env
     set +a
+
+    PLACEOS_TAG=${EXISTING_PLACEOS_TAG:-$PLACEOS_TAG}
 
     echo "░░░ Starting PlaceOS <${PLACEOS_TAG}>"
     echo "░░░ For detailed logging, run \`tail -f ${logfile}\`"
