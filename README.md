@@ -24,6 +24,8 @@ When finished dev work for the day, stop the containers with `./placeos stop`
 - `PLACE_EMAIL`,`PLACE_PASSWORD`: Create an initial admin user via these environment variables
 - `PLACE_DOMAIN`: Set an alternate application domain, defaults to `localhost:8443`
 
+These environment variables can also be passed via the cli.
+
 ## Dependencies
 
 These will need to be installed prior to running `./placeos start`:
@@ -62,6 +64,10 @@ Usage: ./placeos start [-h|--help]
 Start the PlaceOS environment
 
 Arguments:
+    --email EMAIL           Email to setup an admin account for. [default: support@place.tech]
+    --password PASSWORD     Password for created admin account.
+    --application APP_NAME  Application to configure. [default: backoffice]
+    --domain DOMAIN         Domain to configure. [default: localhost:8443]
     --hard-reset            Reset the environment to a default state.
     -s, --sentry            Set-up Sentry
     -h, --help              Display this message

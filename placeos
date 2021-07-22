@@ -50,7 +50,7 @@ run_or_abort() {
 
     exit_code="0"
     start_spinner "░░░ ${start}"
-    $(${task} >> ${logfile} 2>&1) || exit_code="$?"
+    $(${task} >>${logfile} 2>&1) || exit_code="$?"
     stop_spinner $exit_code
 
     if [ $ignore_failure != "true" ]; then
@@ -85,8 +85,11 @@ Usage: ./placeos start [-h|--help]
 Start the PlaceOS environment
 
 Arguments:
-    --email EMAIL           Email to setup an admin account for.
     --hard-reset            Reset the environment to a default state.
+    --email EMAIL           Email to setup an admin account for. [default: support@place.tech]
+    --password PASSWORD     Password for created admin account. [default: development]
+    --domain DOMAIN         Domain to configure. [default: localhost:8443]
+    --application APP       Application to configure. [default: backoffice]
     -s, --sentry            Set-up Sentry
     -h, --help              Display this message
 EOF
@@ -97,6 +100,9 @@ start_environment() {
     hard_reset=false
     setup_sentry=false
     email_argument=""
+    pasword_argument=""
+    domain_argument=""
+    application_argument=""
     while [ ${#} -gt 0 ]; do
         command="${1}"
         shift
@@ -114,6 +120,18 @@ start_environment() {
             ;;
         --email)
             email_argument="${1}"
+            shift
+            ;;
+        --password)
+            password_argument="${1}"
+            shift
+            ;;
+        --domain)
+            domain_argument="${1}"
+            shift
+            ;;
+        --application)
+            application_arguement="${1}"
             shift
             ;;
         -s | --sentry)
@@ -138,18 +156,32 @@ start_environment() {
     banner
 
     # We cannot do substition with defaults in the .env
-    # TODO: Remove after TAG/VERSION are the same thing.
     EXISTING_PLACEOS_TAG=${PLACEOS_TAG:-""}
+    EXISTING_PLACE_APPLICATION=${PLACE_APPLICATION:-""}
+    EXISTING_PLACE_DOMAIN=${PLACE_DOMAIN:-""}
+    EXISTING_PLACE_EMAIL=${PLACE_EMAIL:-""}
+    EXISTING_PLACE_PASSWORD=${PLACE_PASSWORD:-""}
+    EXISTING_PLACE_USERNAME=${PLACE_USERNAME:-""}
 
-    PLACE_EMAIL=""
-    PLACE_USERNAME=""
+    PLACEOS_TAG=${EXISTING_PLACEOS_TAG}
+    PLACE_APPLICATION=${EXISTING_PLACE_APPLICATION}
+    PLACE_DOMAIN=${EXISTING_PLACE_DOMAIN}
+    PLACE_EMAIL=${EXISTING_PLACE_EMAIL}
+    PLACE_PASSWORD=${EXISTING_PLACE_PASSWORD}
+    PLACE_USERNAME=${EXISTING_PLACE_USERNAME}
 
     # Import environment
-    set -a
-    . ./.env
-    set +a
+    set -o allexport
+    source "${base_path}/.env"
+    set +o allexport
 
+    # Restore existing environment unless empty
     PLACEOS_TAG=${EXISTING_PLACEOS_TAG:-$PLACEOS_TAG}
+    PLACE_APPLICATION=${EXISTING_PLACE_APPLICATION:-$PLACE_APPLICATION}
+    PLACE_DOMAIN=${EXISTING_PLACE_DOMAIN:-$PLACE_DOMAIN}
+    PLACE_EMAIL=${EXISTING_PLACE_EMAIL:-$PLACE_EMAIL}
+    PLACE_PASSWORD=${EXISTING_PLACE_PASSWORD:-$PLACE_PASSWORD}
+    PLACE_USERNAME=${EXISTING_PLACE_USERNAME:-$PLACE_USERNAME}
 
     echo "░░░ Starting PlaceOS <${PLACEOS_TAG}>"
     echo "░░░ For detailed logging, run \`tail -f ${logfile}\`"
@@ -167,14 +199,28 @@ start_environment() {
     fi
     set +a
 
+    # Override .env arguments with CLI arguments
+
+    if [ -n "${password_argument}" ]; then
+        PLACE_PASSWORD=${password_argument}
+    fi
+
+    if [ -n "${domain_argument}" ]; then
+        PLACE_DOMAIN=${domain_argument}
+    fi
+
+    if [ -n "${application_argument}" ]; then
+        PLACE_APPLICATION=${application_argument}
+    fi
+
+    # Attempt to set the username to that in git config if username not in env
     if [ -z "${PLACE_USERNAME}" ]; then
-        # Attempt to set the username to that in git config
         PLACE_USERNAME=${PLACE_USERNAME:-"$(git config user.name 2>/dev/null || exit 0)"}
         PLACE_USERNAME=${PLACE_USERNAME:-"Place Support"}
     fi
 
+    # Prompt the user for their email if not already set via `.env` or argument
     if [ -z "${PLACE_EMAIL}" ]; then
-        # Prompt the user for their email if not already set via `.env` or argument
         PLACE_EMAIL=${PLACE_EMAIL:-"$(git config user.email 2>/dev/null || exit 0)"}
         PLACE_EMAIL=${PLACE_EMAIL:-"support@place.tech"}
 
@@ -187,10 +233,14 @@ start_environment() {
         echo "PLACE_EMAIL=${PLACE_EMAIL}" >${EMAIL_ENV}
     fi
 
-    PLACE_DOMAIN=${PLACE_DOMAIN:-"localhost:8443"}
-
-    # TODO: Autogenerate the password
-    PLACE_PASSWORD=${PLACE_PASSWORD:-"development"}
+    # Prompt the user for their password if not already set via `.env`
+    # TODO: Autogenerate the default password
+    while [ -z "${PLACE_PASSWORD}" ]; do
+        read -srp "░░░ Please enter a password: " choice
+        PLACE_PASSWORD="${choice}"
+        # Newline after response
+        echo ""
+    done
 
     # run_or_abort \
     #     "${base_path}/scripts/metricbeat" \
