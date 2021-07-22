@@ -46,13 +46,16 @@ run_or_abort() {
     task="${1}"
     start="${2}"
     failure="${3}"
+    ignore_failure="${4-"false"}"
 
     exit_code="0"
     start_spinner "░░░ ${start}"
     $(${task} >> ${logfile} 2>&1) || exit_code="$?"
     stop_spinner $exit_code
 
-    [ $exit_code -eq "0" ] || abort "${failure:-"${task} failed with ${exit_code}"}"
+    if [ $ignore_failure != "true" ]; then
+        [ $exit_code -eq "0" ] || abort "${failure:-"${task} failed with ${exit_code}"}"
+    fi
 }
 
 hard_reset() {
@@ -218,7 +221,7 @@ start_environment() {
         echo "░░░ Sentry setup complete. Login to http://$PLACE_DOMAIN on port 8989 with..."
         echo "░░░ ${PLACE_EMAIL}:${PLACE_PASSWORD}"
     else
-        echo "░░░ To setup sentry, run \`${base_path}/scripts/setup-sentry.sh\`"
+        echo "░░░ To setup Sentry, run \`${base_path}/placeos start -s\`"
     fi
 
     [ ${hard_reset} == "true" ] && hard_reset

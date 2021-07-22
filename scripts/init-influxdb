@@ -5,16 +5,12 @@ set -e
 instance="influx"
 
 influx_key_env=".env.influxdb"
-env=".env"
 
 set -a
 # Attempt to source the InfluxDB API key
 if [ -f ${influx_key_env} ]; then
     . ${influx_key_env}
 fi
-
-# Source container environment
-. ${env}
 set +a
 
 username="${INFLUX_USER:-placeos}"
