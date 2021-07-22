@@ -36,5 +36,6 @@ jobs:
           path: .logs/*.log
       - name: List service statuses
         run: docker-compose ps
-      - name: Healthcheck
-        run: curl --retry 5 --insecure https://localhost:8443/api/engine/v2
+      - name: Check the API is reachable
+        run: wget --no-check-certificate --no-verbose -q --spider https://localhost:8443/api/engine/v2
+
