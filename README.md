@@ -1,4 +1,8 @@
-# PlaceOS Partner Environment
+<p align="center">
+  <img src="https://github.com/placeos.png?size=200" alt="PlaceOS" />
+</p>
+
+# Partner Environment
 
 [![CI](https://github.com/place-labs/partner-environment/actions/workflows/ci.yml/badge.svg)](https://github.com/place-labs/partner-environment/actions/workflows/ci.yml)
 
@@ -77,3 +81,7 @@ Arguments:
 ## Drivers
 
 See the [PlaceOS Drivers repository](https://github.com/PlaceOS/drivers) for further information.
+
+## Service Graph
+
+![Service graph for PlaceOS](/images/service-graph.png)

@@ -1,0 +1,29 @@
+name: Render Compose Graph
+on:
+  push:
+    branches:
+      - "master"
+    paths:
+      - "docker-compose.yml"
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Configure git user
+        run: |
+          git config user.email "robots@place.technology"
+          git config user.name "PlaceOS Robot"
+      - name: Generate graph
+        run: |
+          docker run --rm -v $(pwd):/input pmsipilot/docker-compose-viz \
+             render --force \
+             -m image \
+             --horizontal \
+             --no-volumes --no-networks \
+             -o ./images/service-graph.png \
+             docker-compose.yml
+      - name: Commit
+        run: "git commit --message='docs: update service graph' ./images/service-graph.png"
+      - name: Push
+        run:  git push
