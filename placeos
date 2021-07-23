@@ -24,6 +24,9 @@ red='\033[0;31m'
 green='\033[0;32m'
 reset='\033[0m'
 
+# Whether to write to STDOUT or not
+VERBOSE="false"
+
 # Path of directory containing the script
 base_path="$(dirname "${0}")"
 
@@ -49,9 +52,14 @@ run_or_abort() {
     ignore_failure="${4-"false"}"
 
     exit_code="0"
-    start_spinner "░░░ ${start}"
-    $(${task} >>${logfile} 2>&1) || exit_code="$?"
-    stop_spinner $exit_code
+    if [ "${VERBOSE}" == "false" ]; then
+        start_spinner "░░░ ${start}"
+        eval "${task} >>${logfile} 2>&1" || exit_code="$?"
+        stop_spinner $exit_code
+    else
+        echo "░░░ ${start}"
+        eval "${task} 2>&1 | tee -a ${logfile}" || exit_code="$?"
+    fi
 
     if [ $ignore_failure != "true" ]; then
         [ $exit_code -eq "0" ] || abort "${failure:-"${task} failed with ${exit_code}"}"
@@ -90,8 +98,9 @@ Arguments:
     --password PASSWORD     Password for created admin account. [default: development]
     --domain DOMAIN         Domain to configure. [default: localhost:8443]
     --application APP       Application to configure. [default: backoffice]
-    -s, --sentry            Set-up Sentry
-    -h, --help              Display this message
+    -s, --sentry            Set-up Sentry.
+    -v, --verbose           Write logs to STDOUT in addition to the log file.
+    -h, --help              Display this message.
 EOF
 }
 
@@ -100,7 +109,7 @@ start_environment() {
     hard_reset=false
     setup_sentry=false
     email_argument=""
-    pasword_argument=""
+    password_argument=""
     domain_argument=""
     application_argument=""
     while [ ${#} -gt 0 ]; do
@@ -137,6 +146,9 @@ start_environment() {
         -s | --sentry)
             setup_sentry=true
             SERVICES+=('-s')
+            ;;
+        -v | --verbose)
+            VERBOSE="true"
             ;;
         -h | --help | help)
             start_environment__usage
@@ -184,7 +196,7 @@ start_environment() {
     PLACE_USERNAME=${EXISTING_PLACE_USERNAME:-$PLACE_USERNAME}
 
     echo "░░░ Starting PlaceOS <${PLACEOS_TAG}>"
-    echo "░░░ For detailed logging, run \`tail -f ${logfile}\`"
+    [ $VERBOSE == "false" ] && echo "░░░ For detailed logging, run \`tail -f ${logfile}\`"
 
     EMAIL_ENV="${base_path}/.env.email"
 
@@ -228,12 +240,10 @@ start_environment() {
         if [ -n "${choice}" ]; then
             PLACE_EMAIL=${choice}
         fi
-
-        # Write the email so as to not prompt the user again.
-        echo "PLACE_EMAIL=${PLACE_EMAIL}" >${EMAIL_ENV}
     fi
 
     # Prompt the user for their password if not already set via `.env`
+    # TODO: Check for the user before asking for a password
     # TODO: Autogenerate the default password
     while [ -z "${PLACE_PASSWORD}" ]; do
         read -srp "░░░ Please enter a password: " choice
@@ -251,6 +261,11 @@ start_environment() {
         "${base_path}/scripts/generate-secrets" \
         "Generating secrets..." \
         "Failed to generate secrets."
+
+    # Write the email so as to not prompt the user again.
+    echo "PLACE_EMAIL=${PLACE_EMAIL}" >${EMAIL_ENV}
+    # TODO: use init check instead of writing the password.
+    echo "PLACE_PASSWORD=${PLACE_PASSWORD}" >> ${EMAIL_ENV}
 
     run_or_abort \
         "${base_path}/scripts/start-services ${SERVICES[@]}" \
