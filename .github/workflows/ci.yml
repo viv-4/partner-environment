@@ -25,7 +25,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Spin up environment
-        run: ./placeos start --email robot@place.tech --password development
+        run: ./placeos start --verbose --email robot@place.tech --password development
         env:
           PLACEOS_TAG: ${{ matrix.version }}
       - name: Upload logs
