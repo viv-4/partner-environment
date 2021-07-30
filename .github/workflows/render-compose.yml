@@ -25,7 +25,7 @@ jobs:
         uses: stefanzweifel/git-auto-commit-action@v4
         with:
           file_pattern: "./images/service-graph.png"
-          commit_message: 'docs: update service graph for changes in ${{ github.head_ref }}'
+          commit_message: "docs: update service graph for changes in ${{ github.head_ref }}"
           commit.user_email: "robots@place.technology"
           commit.user_name: "PlaceOS Robot"
           disable_globbing: true
