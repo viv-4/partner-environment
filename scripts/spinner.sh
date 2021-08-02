@@ -60,14 +60,16 @@ function _spinner() {
 
         # start spinner
         i=1
-        sp='▓▒░'
+        sp='⠇⠋⠙⠸⠴⠦'
 
         delay=${SPINNER_DELAY:-0.15}
 
+        tput civis
         while :; do
             printf "\b${sp:i++%${#sp}:1}"
             sleep $delay
         done
+        tput cnorm
         ;;
     stop)
         if [[ -z ${3} ]]; then
@@ -85,6 +87,7 @@ function _spinner() {
             echo -en "${red}${on_fail}${nc}"
         fi
         echo -e "]"
+        tput cnorm
         ;;
     *)
         echo "invalid argument, try {start/stop}"

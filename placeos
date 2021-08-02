@@ -17,7 +17,7 @@ banner() {
 set -euo pipefail
 
 # Kill child processes on signals
-trap 'pkill -P $$' SIGINT SIGTERM
+trap 'tput cnorm; pkill -P $$;' SIGINT SIGTERM
 
 # Colours
 red='\033[0;31m'
@@ -268,7 +268,7 @@ start_environment() {
     # Write the email so as to not prompt the user again.
     echo "PLACE_EMAIL=${PLACE_EMAIL}" >${EMAIL_ENV}
     # TODO: use init check instead of writing the password.
-    echo "PLACE_PASSWORD=${PLACE_PASSWORD}" >> ${EMAIL_ENV}
+    echo "PLACE_PASSWORD=${PLACE_PASSWORD}" >>${EMAIL_ENV}
 
     run_or_abort \
         "${base_path}/scripts/start-services ${SERVICES[@]}" \
