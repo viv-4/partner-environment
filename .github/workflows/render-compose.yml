@@ -5,6 +5,7 @@ on:
       - "master"
     paths:
       - "docker-compose.yml"
+      - ".github/workflows/render-compose.yml"
 jobs:
   render:
     runs-on: ubuntu-latest
@@ -14,7 +15,7 @@ jobs:
           ref: ${{ github.head_ref }}
       - name: Generate graph
         run: |
-          docker run --rm -v $(pwd):/input pmsipilot/docker-compose-viz \
+          docker run --network none --rm -v $(pwd):/input:rw pmsipilot/docker-compose-viz \
              render --force \
              -m image \
              --horizontal \
