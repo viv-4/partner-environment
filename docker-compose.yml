@@ -86,18 +86,12 @@ services:
       placeos:
     <<: *logging-env
     depends_on:
-      auth:
-        condition: service_healthy
-      elastic:
-        condition: service_healthy
-      etcd:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      rubber-soul:
-        condition: service_healthy
-      rethink:
-        condition: service_healthy
+      - auth
+      - elastic
+      - etcd
+      - redis
+      - rethink
+      - rubber-soul
     env_file:
       - *jwt-public
       - *jwt-secret
@@ -124,10 +118,8 @@ services:
       test: wget --no-verbose -q --spider http://0.0.0.0:8080/auth/authority?health=true
     <<: *logging-env
     depends_on:
-      rethink:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
+      - redis
+      - rethink
     env_file:
       - *jwt-secret
     environment:
@@ -145,12 +137,9 @@ services:
       placeos:
     <<: *logging-env
     depends_on:
-      etcd:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      rethink:
-        condition: service_healthy
+      - etcd
+      - redis
+      - rethink
     ulimits:
       nofile: 40000
       core:
@@ -173,8 +162,7 @@ services:
       placeos:
     <<: *logging-env
     depends_on:
-      core:
-        condition: service_healthy
+      - core
     environment:
       <<: *edge-env
       <<: *deployment-env
@@ -192,8 +180,7 @@ services:
         source: www
         target: /app/www
     depends_on:
-      rethink:
-        condition: service_healthy
+      - rethink
     environment:
       PLACE_LOADER_WWW: www
       <<: *rethinkdb-client-env
@@ -208,9 +195,9 @@ services:
       placeos:
     <<: *logging-env
     depends_on:
+      - influxdb
       - redis
       - rethink
-      - influxdb
     env_file:
       - *influxdb-api-key
     environment:
@@ -230,14 +217,10 @@ services:
       placeos:
     <<: *logging-env
     depends_on:
-      etcd:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      rethink:
-        condition: service_healthy
-      core:
-        condition: service_healthy
+      - core
+      - etcd
+      - redis
+      - rethink
     environment:
       # Service Hosts
       <<: *etcd-client-env
@@ -269,6 +252,7 @@ services:
       placeos:
     <<: *logging-env
     depends_on:
+      - api
       - postgres
     env_file:
       - .env.secret_key
@@ -290,10 +274,8 @@ services:
       placeos:
     <<: *logging-env
     depends_on:
-      rubber-soul:
-        condition: service_healthy
-      rethink:
-        condition: service_healthy
+      - rethink
+      - rubber-soul
     environment:
       # User/Application Configuration
       PLACE_DOMAIN: ${PLACE_DOMAIN:-localhost:8443}
@@ -318,10 +300,8 @@ services:
       placeos:
     <<: *logging-env
     depends_on:
-      elastic:
-        condition: service_healthy
-      rethink:
-        condition: service_healthy
+      - elastic
+      - rethink
     environment:
       # Service Hosts
       <<: *rethinkdb-client-env
@@ -404,10 +384,9 @@ services:
       placeos:
     <<: *logging-env
     depends_on:
-      auth:
-        condition: service_healthy
-      api:
-        condition: service_healthy
+      - api
+      - auth
+      - staff
     volumes:
       - type: volume
         source: www
