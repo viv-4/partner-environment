@@ -14,9 +14,8 @@ jobs:
           - ubuntu-latest
         version:
           - placeos-1.2105.3
-          - placeos-1.2107.1
-          - placeos-1.2107.2
-          - placeos-1.2107.3
+          - placeos-1.2107.4
+          - placeos-1.2108.1
         include:
           - version: nightly
             stable: false
