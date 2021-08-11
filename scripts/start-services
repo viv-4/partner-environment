@@ -4,21 +4,17 @@ set -eu
 
 COMPOSE_FILES=('-f ./docker-compose.yml')
 
-while [[ $# -gt 0 ]]
-do
-  arg="$1"
+for arg in "$@"; do
   case $arg in
-    -e|--elk)
+  -e | --elk)
     COMPOSE_FILES+=('-f ./compose-files/elk/docker-compose.yml')
-    shift
     ;;
-    -s|--sentry)
+  -s | --sentry)
     COMPOSE_FILES+=('-f ./compose-files/sentry/docker-compose.yml')
-    shift
     ;;
   esac
 done
 
-docker-compose pull -q
+docker-compose ${COMPOSE_FILES[@]} pull -q
 
 docker-compose ${COMPOSE_FILES[@]} up -d

@@ -51,21 +51,18 @@ run_or_abort() {
     failure="${3}"
     ignore_failure="${4-"false"}"
 
-    # Hacks to ensure env is forwarded. It's unclear as to why this isn't done by default
-    env=$(printenv | awk 'BEGIN {FS=OFS="="} { print $1, "\""$2"\"" }' | tr '\n' ';')
-
-    exit_code="0"
+    exit_code=0
     if [ "${VERBOSE}" == "false" ]; then
         start_spinner "░░░ ${start}"
-        eval "${env} ${task} >>${logfile} 2>&1" || exit_code="$?"
+        eval "${task} >>${logfile} 2>&1" || exit_code=$?
         stop_spinner $exit_code
     else
         echo "░░░ ${start}"
-        eval "${env} ${task} 2>&1 | tee -a ${logfile}" || exit_code="$?"
+        eval "${task} 2>&1 | tee -a ${logfile}" || exit_code=$?
     fi
 
     if [ $ignore_failure != "true" ]; then
-        [ $exit_code -eq "0" ] || abort "${failure:-"${task} failed with ${exit_code}"}"
+        [ $exit_code -eq 0 ] || abort "${failure:-"${task} failed with ${exit_code}"}"
     fi
 }
 
@@ -170,33 +167,19 @@ start_environment() {
 
     banner
 
-    # We cannot do substition with defaults in the .env
-    EXISTING_PLACEOS_TAG=${PLACEOS_TAG:-""}
-    EXISTING_PLACE_APPLICATION=${PLACE_APPLICATION:-""}
-    EXISTING_PLACE_DOMAIN=${PLACE_DOMAIN:-""}
-    EXISTING_PLACE_EMAIL=${PLACE_EMAIL:-""}
-    EXISTING_PLACE_PASSWORD=${PLACE_PASSWORD:-""}
-    EXISTING_PLACE_USERNAME=${PLACE_USERNAME:-""}
+    # Save the existing environment
+    ext_env=$(mktemp)
+    export -p > "${ext_env}"
 
-    PLACEOS_TAG=${EXISTING_PLACEOS_TAG}
-    PLACE_APPLICATION=${EXISTING_PLACE_APPLICATION}
-    PLACE_DOMAIN=${EXISTING_PLACE_DOMAIN}
-    PLACE_EMAIL=${EXISTING_PLACE_EMAIL}
-    PLACE_PASSWORD=${EXISTING_PLACE_PASSWORD}
-    PLACE_USERNAME=${EXISTING_PLACE_USERNAME}
-
-    # Import environment
+    # Import .env
     set -o allexport
-    source "${base_path}/.env"
+    . "${base_path}/.env"
     set +o allexport
 
-    # Restore existing environment unless empty
-    PLACEOS_TAG=${EXISTING_PLACEOS_TAG:-$PLACEOS_TAG}
-    PLACE_APPLICATION=${EXISTING_PLACE_APPLICATION:-$PLACE_APPLICATION}
-    PLACE_DOMAIN=${EXISTING_PLACE_DOMAIN:-$PLACE_DOMAIN}
-    PLACE_EMAIL=${EXISTING_PLACE_EMAIL:-$PLACE_EMAIL}
-    PLACE_PASSWORD=${EXISTING_PLACE_PASSWORD:-$PLACE_PASSWORD}
-    PLACE_USERNAME=${EXISTING_PLACE_USERNAME:-$PLACE_USERNAME}
+    # Overlay the original config and cleanup
+    . "${ext_env}"
+    rm "${ext_env}"
+    unset ext_env
 
     echo "░░░ Starting PlaceOS <${PLACEOS_TAG}>"
     [ $VERBOSE == "false" ] && echo "░░░ For detailed logging, run \`tail -f ${logfile}\`"
@@ -229,13 +212,13 @@ start_environment() {
     fi
 
     # Attempt to set the username to that in git config if username not in env
-    if [ -z "${PLACE_USERNAME}" ]; then
+    if [ -z ${PLACE_USERNAME+x} ]; then
         PLACE_USERNAME=${PLACE_USERNAME:-"$(git config user.name 2>/dev/null || exit 0)"}
         PLACE_USERNAME=${PLACE_USERNAME:-"Place Support"}
     fi
 
     # Prompt the user for their email if not already set via `.env` or argument
-    if [ -z "${PLACE_EMAIL}" ]; then
+    if [ -z ${PLACE_EMAIL+x} ]; then
         PLACE_EMAIL=${PLACE_EMAIL:-"$(git config user.email 2>/dev/null || exit 0)"}
         PLACE_EMAIL=${PLACE_EMAIL:-"support@place.tech"}
 
@@ -248,7 +231,7 @@ start_environment() {
     # Prompt the user for their password if not already set via `.env`
     # TODO: Check for the user before asking for a password
     # TODO: Autogenerate the default password
-    while [ -z "${PLACE_PASSWORD}" ]; do
+    while [ -z ${PLACE_PASSWORD+x} ]; do
         read -srp "░░░ Please enter a password: " choice
         PLACE_PASSWORD="${choice}"
         # Newline after response
@@ -310,6 +293,7 @@ Usage: ./placeos stop [-h|--help]
 Stop the PlaceOS environment
 
 Arguments:
+    -v, --verbose           Write logs to STDOUT in addition to the log file.
     -h, --help              Display this message
 EOF
 }
@@ -322,6 +306,9 @@ stop_environment() {
         -h | --help | help)
             stop_environment__usage
             exit 0
+            ;;
+        -v | --verbose)
+            VERBOSE="true"
             ;;
         *)
             if [ -n "${command}" ]; then
