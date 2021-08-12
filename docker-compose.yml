@@ -12,6 +12,7 @@ networks:
 volumes:
   elastic-data:
   influx-data:
+  nginx-data:
   postgres-data:
   redis-data:
   rethink-data:
@@ -392,6 +393,9 @@ services:
         source: www
         target: /etc/nginx/html/
         read_only: true
+      - type: volume
+        source: nginx-data
+        target: /etc/nginx/ssl/
       - ${PWD}/config/nginx/nginx.conf:/etc/nginx/nginx.conf
       - ${PWD}/.htpasswd-kibana:/etc/nginx/.htpasswd-kibana
     env_file:
