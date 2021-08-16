@@ -243,15 +243,15 @@ start_environment() {
     #     "Checking Host OS..." \
     #     "Error occurred while checking Host OS."
 
-    run_or_abort \
-        "${base_path}/scripts/generate-secrets" \
-        "Generating secrets..." \
-        "Failed to generate secrets."
-
     # Write the email so as to not prompt the user again.
     echo "PLACE_EMAIL=${PLACE_EMAIL}" >${EMAIL_ENV}
     # TODO: use init check instead of writing the password.
     echo "PLACE_PASSWORD=${PLACE_PASSWORD}" >>${EMAIL_ENV}
+    
+    run_or_abort \
+        "${base_path}/scripts/generate-secrets" \
+        "Generating secrets..." \
+        "Failed to generate secrets."
 
     run_or_abort \
         "${base_path}/scripts/start-services ${SERVICES[@]}" \
