@@ -13,6 +13,7 @@ jobs:
           - ubuntu-18.04
           - ubuntu-latest
         version:
+          - "" # Test empty tag
           - placeos-1.2105.3
           - placeos-1.2107.4
           - placeos-1.2108.1
@@ -25,10 +26,19 @@ jobs:
             os: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: Spin up environment
+      - name: Test initialization
         run: ./placeos start --verbose
         env:
           PLACEOS_TAG: ${{ matrix.version }}
+          PLACE_EMAIL: robot@place.tech
+          PLACE_PASSWORD: development
+      - name: Test initialization, with unset PLACEOS_TAG
+        if: ${{ matrix.version == '' }}
+        run: |
+          docker-compose down --volumes &> /dev/null
+          rm .env.*
+          ./placeos start --verbose
+        env:
           PLACE_EMAIL: robot@place.tech
           PLACE_PASSWORD: development
       - name: Upload logs
@@ -40,4 +50,7 @@ jobs:
       - name: List service statuses
         run: docker-compose ps
       - name: Check API is reachable
+        continue-on-error: true
         run: curl --retry 10 --insecure -fsSL https://localhost:8443/api/engine/v2
+      - name: Test raw `docker-compose`
+        run: docker-compose down
