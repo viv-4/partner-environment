@@ -70,6 +70,7 @@ Arguments:
     --domain DOMAIN         Domain to configure. [default: localhost:8443]
     --hard-reset            Reset the environment to a default state.
     -s, --sentry            Set-up Sentry
+    -v, --verbose           Write logs to STDOUT in addition to the log file.
     -h, --help              Display this message
 ```
 
@@ -81,6 +82,7 @@ Usage: ./placeos stop [-h|--help]
 Stop the PlaceOS environment
 
 Arguments:
+    -v, --verbose           Write logs to STDOUT in addition to the log file.
     -h, --help              Display this message
 ```
 
