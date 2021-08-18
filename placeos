@@ -181,6 +181,11 @@ start_environment() {
     rm "${ext_env}"
     unset ext_env
 
+    if [[ $PLACEOS_TAG < "placeos-1.2108.2" ]]; then
+      PLACE_STAFF_API_TAG="nightly"
+      PLACE_NGINX_TAG="staff-api"
+    fi
+
     echo "░░░ Starting PlaceOS <${PLACEOS_TAG}>"
     [ $VERBOSE == "false" ] && echo "░░░ For detailed logging, run \`tail -f ${logfile}\`"
 
