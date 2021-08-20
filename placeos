@@ -249,9 +249,14 @@ start_environment() {
     #     "Error occurred while checking Host OS."
 
     # Write the email so as to not prompt the user again.
-    echo "PLACE_EMAIL=${PLACE_EMAIL}" >${EMAIL_ENV}
+    echo "PLACE_EMAIL=${PLACE_EMAIL}" >"${EMAIL_ENV}"
     # TODO: use init check instead of writing the password.
-    echo "PLACE_PASSWORD=${PLACE_PASSWORD}" >>${EMAIL_ENV}
+    echo "PLACE_PASSWORD=${PLACE_PASSWORD}" >>"${EMAIL_ENV}"
+
+    if [[ -d "${base_path}/.htpasswd-kibana" ]]; then
+        echo "░░░ Detected malformed auth file. Cleaning up"
+        rm -r "${base_path}/.htpasswd-kibana"
+    fi
 
     run_or_abort \
         "${base_path}/scripts/generate-secrets" \
