@@ -170,21 +170,27 @@ start_environment() {
     # Save the existing environment
     ext_env=$(mktemp)
     export -p > "${ext_env}"
-
-    # Import .env
     set -o allexport
+
+    # Load contents of .env
     . "${base_path}/.env"
-    set +o allexport
 
-    # Overlay the original config and cleanup
-    . "${ext_env}"
-    rm "${ext_env}"
-    unset ext_env
-
+    # Conditional config for backwards compat
     if [[ $PLACEOS_TAG < "placeos-1.2108.2" ]]; then
       PLACE_STAFF_API_TAG="nightly"
       PLACE_NGINX_TAG="staff-api"
     fi
+    if [[ $PLACEOS_TAG < "placeos-1.2109.0" ]]; then
+      PLACE_FRONTEND_LOADER_IMAGE="frontends"
+    fi
+
+    # Overlay the existing environment
+    . "${ext_env}"
+
+    # Cleanup
+    set +o allexport
+    rm "${ext_env}"
+    unset ext_env
 
     echo "░░░ Starting PlaceOS <${PLACEOS_TAG}>"
     [ $VERBOSE == "false" ] && echo "░░░ For detailed logging, run \`tail -f ${logfile}\`"
@@ -332,7 +338,7 @@ stop_environment() {
     done
 
     run_or_abort \
-        "docker-compose down" \
+        "docker-compose down --remove-orphans" \
         "Tearing down PlaceOS" \
         "Failed to teardown PlaceOS"
 }

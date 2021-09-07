@@ -15,6 +15,6 @@ for arg in "$@"; do
   esac
 done
 
-docker-compose ${COMPOSE_FILES[@]} pull -q
+docker-compose ${COMPOSE_FILES[@]} pull --quiet
 
-docker-compose ${COMPOSE_FILES[@]} up -d
+docker-compose ${COMPOSE_FILES[@]} up --detach --remove-orphans
