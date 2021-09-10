@@ -2,7 +2,7 @@ name: CI
 on: push
 jobs:
   test:
-    name: "version: ${{ matrix.version }}, os: ${{ matrix.os }}, stable: ${{ matrix.stable }}"
+    name: "version: ${{ matrix.version != '' && matrix.version || 'empty'}}, os: ${{ matrix.os }}, stable: ${{ matrix.stable }}"
     runs-on: ${{ matrix.os }}
     continue-on-error: ${{ !matrix.stable }}
     strategy:
