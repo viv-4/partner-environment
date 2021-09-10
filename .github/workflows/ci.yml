@@ -2,7 +2,7 @@ name: CI
 on: push
 jobs:
   test:
-    name: "os: ${{ matrix.os }}, version: ${{ matrix.version }}, stable: ${{ matrix.stable }}"
+    name: "version: ${{ matrix.version }}, os: ${{ matrix.os }}, stable: ${{ matrix.stable }}"
     runs-on: ${{ matrix.os }}
     continue-on-error: ${{ !matrix.stable }}
     strategy:
@@ -35,7 +35,7 @@ jobs:
           PLACE_EMAIL: robot@place.tech
           PLACE_PASSWORD: development
       - name: Test initialization, with unset PLACEOS_TAG
-        if: ${{ matrix.version == '' }}
+        if: ${{ matrix.version == '' }} # Testing an empty tag
         run: |
           docker-compose down --volumes &> /dev/null
           rm .env.*
