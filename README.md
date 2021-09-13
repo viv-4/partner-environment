@@ -69,7 +69,6 @@ Arguments:
     --application APP_NAME  Application to configure. [default: backoffice]
     --domain DOMAIN         Domain to configure. [default: localhost:8443]
     --hard-reset            Reset the environment to a default state.
-    -s, --sentry            Set-up Sentry
     -v, --verbose           Write logs to STDOUT in addition to the log file.
     -h, --help              Display this message
 ```

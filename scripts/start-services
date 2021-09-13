@@ -9,9 +9,6 @@ for arg in "$@"; do
   -e | --elk)
     COMPOSE_FILES+=('-f ./compose-files/elk/docker-compose.yml')
     ;;
-  -s | --sentry)
-    COMPOSE_FILES+=('-f ./compose-files/sentry/docker-compose.yml')
-    ;;
   esac
 done
 
