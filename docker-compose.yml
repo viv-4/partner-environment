@@ -253,8 +253,8 @@ services:
       - api
       - postgres
     env_file:
-      - .env.secret_key
-      - .env.public_key
+      - *jwt-public
+      - *jwt-secret
     environment:
       SG_ENV: production
       STAFF_TIME_ZONE: $TZ
