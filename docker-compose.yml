@@ -302,6 +302,8 @@ services:
       - elastic
       - rethink
     environment:
+      # Must be specified for `>= 1.2108.0, <= 1.2109.1`
+      ES_DISABLE_BULK: "0"
       # Service Hosts
       <<: *rethinkdb-client-env
       <<: *elastic-client-env
