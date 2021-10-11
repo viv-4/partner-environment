@@ -358,7 +358,7 @@ services:
       TZ: $TZ
 
   influxdb:
-    image: influxdb:${INFLUXDB_IMAGE_TAG:-2.0.8-alpine}
+    image: influxdb:${INFLUXDB_IMAGE_TAG:-2.0-alpine}
     container_name: influx
     restart: always
     networks:
@@ -372,6 +372,30 @@ services:
         source: influx-data
         target: /root/.influxdbv2
     command: "--reporting-disabled"
+    
+  chronograf:
+    image: chronograf:1.9
+    container_name: chronograf
+    restart: always
+    networks:
+      placeos:
+    <<: *std-logging
+    environment:
+      BASE_PATH: /analytics
+      INFLUXDB_URL: $INFLUX_HOST
+      INFLUXDB_ORG: $INFLUX_ORG
+      GENERIC_CLIENT_ID: "CREATE_AND_COPY_ANALYTICS_CLIENT_ID_FROM_BACKOFFICE"
+      GENERIC_AUTH_URL: "https://${PLACE_DOMAIN}/auth/oauth/authorize"
+      GENERIC_TOKEN_URL: "https://${PLACE_DOMAIN}/auth/oauth/token"
+      GENERIC_API_URL: "https://${PLACE_DOMAIN}/api/engine/v2/users/current"
+      GENERIC_API_KEY: "email"
+      GENERIC_SCOPES: "public"
+      GENERIC_NAME: "PlaceOS"
+      PUBLIC_URL: "https://${PLACE_DOMAIN}"
+    # env_file:
+    #   - *influxdb-api-key
+    #   - *oauth-analytics
+
 
   nginx:
     image: placeos/nginx:${PLACE_NGINX_TAG:-nightly}
