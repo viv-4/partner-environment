@@ -382,7 +382,7 @@ services:
     <<: *std-logging
     env_file:
       - *influxdb-api-key
-      - .env.chronograf  # Container TOKEN_SECRET for OAuth integration
+      - .env.chronograf  # Contains TOKEN_SECRET for OAuth integration
     environment:
       BASE_PATH: /analytics
       INFLUXDB_URL: $INFLUX_HOST
