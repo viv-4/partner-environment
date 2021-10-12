@@ -370,7 +370,7 @@ services:
     volumes:
       - type: volume
         source: influx-data
-        target: /root/.influxdbv2
+        target: /var/lib/influxdb2
     command: "--reporting-disabled"
     
   chronograf:
