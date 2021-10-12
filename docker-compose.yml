@@ -380,6 +380,9 @@ services:
     networks:
       placeos:
     <<: *std-logging
+    env_file:
+      - *influxdb-api-key
+      - .env.chronograf  # Container TOKEN_SECRET for OAuth integration
     environment:
       BASE_PATH: /analytics
       INFLUXDB_URL: $INFLUX_HOST
@@ -392,9 +395,6 @@ services:
       GENERIC_SCOPES: "public"
       GENERIC_NAME: "PlaceOS"
       PUBLIC_URL: "https://${PLACE_DOMAIN}"
-    # env_file:
-    #   - *influxdb-api-key
-    #   - *oauth-analytics
 
 
   nginx:
