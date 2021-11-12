@@ -19,7 +19,7 @@ org="${INFLUX_ORG:-PlaceOS}"
 bucket="${INFLUX_BUCKET:-place}"
 retention="${INFLUX_RETENTION:-4w}"
 
-echo "=== Initialising InfluxDB API"
+echo "░░░ Initialising InfluxDB API"
 # Wait for the service to be available
 wait=0
 max_wait=60
@@ -27,7 +27,7 @@ until [ $wait -eq $max_wait ] || docker exec $instance influx ping > /dev/null; 
   sleep $(( wait++ ))
 done
 if [ $wait -eq $max_wait ]; then
-  echo "=== Timeout waiting for InfluxDB to be ready"
+  echo "░░░ Timeout waiting for InfluxDB to be ready"
   exit 1
 fi
 

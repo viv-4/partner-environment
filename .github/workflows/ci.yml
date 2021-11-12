@@ -2,7 +2,7 @@ name: CI
 on: push
 jobs:
   test:
-    name: "version: ${{ matrix.version != '' && matrix.version || 'empty'}}, os: ${{ matrix.os }}, stable: ${{ matrix.stable }}"
+    name: "${{ !matrix.stable && '🚧 ' || '' }}version: ${{ matrix.version != '' && matrix.version || 'empty'}}, os: ${{ matrix.os }}"
     runs-on: ${{ matrix.os }}
     continue-on-error: ${{ !matrix.stable }}
     strategy:
@@ -17,8 +17,9 @@ jobs:
           - placeos-1.2105.3
           - placeos-1.2107.4
           - placeos-1.2108.4
-          - placeos-1.2109.0
           - placeos-1.2109.1
+          - placeos-1.2111.0
+          - placeos-1.2111.1
         include:
           - version: nightly
             stable: false

@@ -185,6 +185,9 @@ start_environment() {
           PLACE_FRONTEND_LOADER_IMAGE="frontends"
         fi
 
+        if [[ $PLACEOS_TAG < "placeos-1.2111.0" ]]; then
+          PLACE_SEARCH_INGEST_IMAGE="rubber-soul"
+        fi
     fi
 
     # Cleanup
