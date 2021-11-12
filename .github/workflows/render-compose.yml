@@ -15,6 +15,7 @@ jobs:
           ref: ${{ github.head_ref }}
       - name: Generate graph
         run: |
+          chmod 777 images
           docker run --network none --rm -v $(pwd):/input:rw pmsipilot/docker-compose-viz \
              render --force \
              -m image \
