@@ -13,13 +13,12 @@ jobs:
           - ubuntu-18.04
           - ubuntu-latest
         version:
-          - "" # Test empty tag
-          - placeos-1.2105.3
+          - "" # Test an empty tag
           - placeos-1.2107.4
           - placeos-1.2108.4
           - placeos-1.2109.1
-          - placeos-1.2111.0
-          - placeos-1.2111.1
+          - placeos-1.2110.5
+          - placeos-1.2111.2
         include:
           - version: nightly
             stable: false
@@ -44,6 +43,7 @@ jobs:
         env:
           PLACE_EMAIL: robot@place.tech
           PLACE_PASSWORD: development
+          ETCD_VERSION: 3.5.1
       - name: Upload logs
         if: ${{ failure() }}
         uses: actions/upload-artifact@v2
