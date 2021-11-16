@@ -91,6 +91,18 @@ Arguments:
     -h, --help              Display this message
 ```
 
+### `$ ./placeos task`
+
+```shell-session
+Usage: ./placeos task [-h|--help|help] [-t|--task] <task> [help|...] [arguments...]
+
+Run a task in the PlaceOS environment.
+
+Arguments:
+    -h, --help              Display this message
+    -t, ---tasks            Display list of available tasks
+```
+
 ## Drivers
 
 See the [PlaceOS Drivers repository](https://github.com/PlaceOS/drivers) for further information.

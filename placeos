@@ -13,6 +13,42 @@ banner() (
     echo
 )
 
+# This functions mutates the outer scope, hence {} are used
+load_environment() {
+    # Save the existing environment
+    ext_env=$(mktemp)
+    export -p > "${ext_env}"
+    set -o allexport
+
+    # Load contents of .env
+    . "${base_path}/.env"
+
+    # Overlay the existing environment
+    . "${ext_env}"
+
+    # Conditional config for backwards compat
+    if [[ $PLACEOS_TAG =~ ^placeos-[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+
+        if [[ $PLACEOS_TAG < "placeos-1.2108.2" ]]; then
+          PLACE_STAFF_API_TAG="nightly"
+          PLACE_NGINX_TAG="staff-api"
+        fi
+
+        if [[ $PLACEOS_TAG < "placeos-1.2109.0" ]]; then
+          PLACE_FRONTEND_LOADER_IMAGE="frontends"
+        fi
+
+        if [[ $PLACEOS_TAG < "placeos-1.2111.0" ]]; then
+          PLACE_SEARCH_INGEST_IMAGE="rubber-soul"
+        fi
+    fi
+
+    # Cleanup
+    set +o allexport
+    rm "${ext_env}"
+    unset ext_env
+}
+
 # The bash hail mary (exit on failure, unset variables, fail pipe composition early)
 set -euo pipefail
 
@@ -161,41 +197,12 @@ start_environment() (
 
     banner
 
-    # Save the existing environment
-    ext_env=$(mktemp)
-    export -p > "${ext_env}"
-    set -o allexport
+    load_environment
 
-    # Load contents of .env
-    . "${base_path}/.env"
-
-
-    # Overlay the existing environment
-    . "${ext_env}"
-
-    # Conditional config for backwards compat
-    if [[ $PLACEOS_TAG =~ ^placeos-[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-
-        if [[ $PLACEOS_TAG < "placeos-1.2108.2" ]]; then
-          PLACE_STAFF_API_TAG="nightly"
-          PLACE_NGINX_TAG="staff-api"
-        fi
-
-        if [[ $PLACEOS_TAG < "placeos-1.2109.0" ]]; then
-          PLACE_FRONTEND_LOADER_IMAGE="frontends"
-        fi
-
-        if [[ $PLACEOS_TAG < "placeos-1.2111.0" ]]; then
-          PLACE_SEARCH_INGEST_IMAGE="rubber-soul"
-        fi
-    fi
-
-    # Cleanup
-    set +o allexport
-    rm "${ext_env}"
-    unset ext_env
+    # Override .env arguments with CLI arguments
 
     echo "░░░ Starting PlaceOS <${PLACEOS_TAG}>"
+
     [ $VERBOSE == "false" ] && echo "░░░ For detailed logging, run \`tail -f ${logfile}\`"
 
     EMAIL_ENV="${base_path}/.env.email"
@@ -210,8 +217,6 @@ start_environment() (
         echo "PLACE_EMAIL=${PLACE_EMAIL}" >${EMAIL_ENV}
     fi
     set +a
-
-    # Override .env arguments with CLI arguments
 
     if [ -n "${password_argument}" ]; then
         PLACE_PASSWORD=${password_argument}
@@ -347,6 +352,8 @@ EOF
 )
 
 task() (
+    load_environment
+
     PARAMS=""
     while [ ${#} -gt 0 ]; do
         command="${1}"
@@ -361,11 +368,17 @@ task() (
             exit 0
             ;;
         *)
-            PARAMS="$PARAMS $1"
+            PARAMS="${PARAMS} ${command}"
             shift
             ;;
         esac
     done
+
+    # Print help when no task passed
+    if [[ -z "${PARAMS}" ]]; then
+        ./scripts/run-sam-task help
+        exit 0
+    fi
 
     ./scripts/run-sam-task ${PARAMS}
 )
