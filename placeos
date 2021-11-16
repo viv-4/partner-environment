@@ -1,6 +1,6 @@
 #! /usr/bin/env bash
 
-banner() {
+banner() (
     echo
     echo '░░░░░░░\  ░░\                                ░░░░░░\   ░░░░░░\'
     echo '░░  __░░\ ░░ |                              ░░  __░░\ ░░  __░░\'
@@ -11,7 +11,7 @@ banner() {
     echo '░░ |      ░░ |\░░░░░░░ |\░░░░░░░\ \░░░░░░░\  ░░░░░░  |\░░░░░░  |'
     echo '\__|      \__| \_______| \_______| \_______| \______/  \______/'
     echo
-}
+)
 
 # The bash hail mary (exit on failure, unset variables, fail pipe composition early)
 set -euo pipefail
@@ -39,13 +39,13 @@ logfile="${base_path}/.logs/$(date +"%Y%m%d%H%M").log"
 
 COMPOSE_PROJECT_NAME=placeos
 
-abort() {
+abort() (
     echo -e "░░░ ${red}${1}${reset}"
     echo "░░░ Logs can be found in ${logfile}"
     exit 1
-}
+)
 
-run_or_abort() {
+run_or_abort() (
     task="${1}"
     start="${2}"
     failure="${3}"
@@ -64,9 +64,9 @@ run_or_abort() {
     if [ $ignore_failure != "true" ]; then
         [ $exit_code -eq 0 ] || abort "${failure:-"${task} failed with ${exit_code}"}"
     fi
-}
+)
 
-hard_reset() {
+hard_reset() (
     # TODO: drop influxdb tables
     # TODO: clear redis
 
@@ -84,9 +84,9 @@ hard_reset() {
         'docker-compose restart nginx' \
         "Restarting nginx..." \
         "Failed to restart nginx."
-}
+)
 
-start_environment__usage() {
+start_environment__usage() (
     cat <<EOF
 Usage: ./placeos start [-h|--help]
 
@@ -101,9 +101,9 @@ Arguments:
     -v, --verbose           Write logs to STDOUT in addition to the log file.
     -h, --help              Display this message.
 EOF
-}
+)
 
-start_environment() {
+start_environment() (
     SERVICES=('')
     hard_reset=false
     email_argument=""
@@ -291,9 +291,9 @@ start_environment() {
 
     echo "░░░ PlaceOS initialised. Login to https://$PLACE_DOMAIN/backoffice/ with..."
     echo "░░░ $PLACE_EMAIL:$PLACE_PASSWORD"
-}
+)
 
-stop_environment__usage() {
+stop_environment__usage() (
     cat <<EOF
 Usage: ./placeos stop [-h|--help]
 
@@ -303,9 +303,9 @@ Arguments:
     -v, --verbose           Write logs to STDOUT in addition to the log file.
     -h, --help              Display this message
 EOF
-}
+)
 
-stop_environment() {
+stop_environment() (
     while [ ${#} -gt 0 ]; do
         command="${1}"
         shift
@@ -332,8 +332,7 @@ stop_environment() {
         "docker-compose down --remove-orphans" \
         "Tearing down PlaceOS" \
         "Failed to teardown PlaceOS"
-}
-
+)
 
 task__usage() (
     cat <<EOF
@@ -359,6 +358,8 @@ task() (
             ;;
         -t | --tasks)
             ./scripts/run-sam-task help
+            exit 0
+            ;;
         *)
             PARAMS="$PARAMS $1"
             shift
@@ -369,7 +370,7 @@ task() (
     ./scripts/run-sam-task ${PARAMS}
 )
 
-update_environment__usage() {
+update_environment__usage() (
     cat <<EOF
 Usage: ./placeos update [-h|--help]
 
@@ -378,9 +379,9 @@ Update the PlaceOS environment
 Arguments:
     -h, --help              Display this message
 EOF
-}
+)
 
-update_environment() {
+update_environment() (
     while [ ${#} -gt 0 ]; do
         command="${1}"
         shift
@@ -404,9 +405,9 @@ update_environment() {
     # Users will be able to to the next patch, or minor version
     # Version info can be extracted from the heads of version branches in a file containing the version
     abort "Not implemented."
-}
+)
 
-usage() {
+usage() (
     cat <<EOF
 Usage: ./placeos [-h|--help] [command]
 
@@ -421,7 +422,7 @@ Command:
 Arguments:
     -h, --help              Display this message.
 EOF
-}
+)
 
 if [ $# -eq 0 ]; then
     usage
