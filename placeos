@@ -334,6 +334,41 @@ stop_environment() {
         "Failed to teardown PlaceOS"
 }
 
+
+task__usage() (
+    cat <<EOF
+Usage: ./placeos task [-h|--help|help] [-t|--task] <task> [help|...] [arguments...]
+
+Run a task in the PlaceOS environment.
+
+Arguments:
+    -h, --help              Display this message
+    -t, ---tasks            Display list of available tasks
+EOF
+)
+
+task() (
+    PARAMS=""
+    while [ ${#} -gt 0 ]; do
+        command="${1}"
+        shift
+        case ${command} in
+        -h | --help)
+            task__usage
+            exit 0
+            ;;
+        -t | --tasks)
+            ./scripts/run-sam-task help
+        *)
+            PARAMS="$PARAMS $1"
+            shift
+            ;;
+        esac
+    done
+
+    ./scripts/run-sam-task ${PARAMS}
+)
+
 update_environment__usage() {
     cat <<EOF
 Usage: ./placeos update [-h|--help]
@@ -380,6 +415,7 @@ Helper script for interfacing with the PlaceOS Partner Environment
 Command:
     start                   Start the environment.
     stop                    Stops the environment.
+    task                    Runs a task in the environment.
     help                    Display this message.
 
 Arguments:
@@ -400,6 +436,9 @@ start)
     ;;
 stop)
     stop_environment "$@"
+    ;;
+task)
+    task "$@"
     ;;
 update)
     update_environment "$@"
