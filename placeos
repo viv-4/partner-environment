@@ -81,7 +81,7 @@ abort() (
     exit 1
 )
 
-run_or_abort() (
+run_or_abort() {
     task="${1}"
     start="${2}"
     failure="${3}"
@@ -100,7 +100,7 @@ run_or_abort() (
     if [ $ignore_failure != "true" ]; then
         [ $exit_code -eq 0 ] || abort "${failure:-"${task} failed with ${exit_code}"}"
     fi
-)
+}
 
 hard_reset() (
     # TODO: drop influxdb tables
