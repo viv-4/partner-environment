@@ -19,8 +19,10 @@ jobs:
           - placeos-1.2109.1
           - placeos-1.2110.5
           - placeos-1.2111.2
-          - placeos-1.2111.3
         include:
+          - version: placeos-1.2111.3
+            stable: false
+            os: latest
           - version: nightly
             stable: false
             os: ubuntu-18.04
