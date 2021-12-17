@@ -128,6 +128,7 @@ services:
       <<: *redis-client-env
       COAUTH_NO_SSL: "true"
       TZ: $TZ
+      PLACE_URI: https://${PLACE_DOMAIN:-localhost:8443}
 
   core: # Module coordinator
     image: placeos/core:${PLACE_CORE_TAG:-nightly}
