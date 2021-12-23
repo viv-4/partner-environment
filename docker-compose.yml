@@ -400,7 +400,8 @@ services:
       BASE_PATH: /analytics
       INFLUXDB_URL: $INFLUX_HOST
       INFLUXDB_ORG: $INFLUX_ORG
-      GENERIC_CLIENT_ID: "CREATE_AND_COPY_ANALYTICS_CLIENT_ID_FROM_BACKOFFICE"
+      GENERIC_CLIENT_ID: "COPY_ANALYTICS_CLIENT_ID_FROM_BACKOFFICE"
+      GENERIC_CLIENT_SECRET: "COPY_ANALYTICS_CLIENT_SECRET_FROM_BACKOFFICE"
       GENERIC_AUTH_URL: "https://${PLACE_DOMAIN}/auth/oauth/authorize"
       GENERIC_TOKEN_URL: "https://${PLACE_DOMAIN}/auth/oauth/token"
       GENERIC_API_URL: "https://${PLACE_DOMAIN}/api/engine/v2/users/current"
@@ -416,6 +417,7 @@ services:
     hostname: mosquitto
     networks:
       placeos:
+    <<: *std-logging
     volumes:
       - ${PWD}/config/mosquitto/mosquitto.conf:/etc/mosquitto/mosquitto.conf
     environment:
@@ -443,8 +445,7 @@ services:
         read_only: true
       - type: volume
         source: nginx-data
-        target: /etc/nginx/
-      - ${PWD}/config/nginx/nginx.conf:/etc/nginx/nginx.conf
+        target: /etc/nginx/ssl
       - ${PWD}/.htpasswd-kibana:/etc/nginx/.htpasswd-kibana
     env_file:
       - *jwt-public-key-env
