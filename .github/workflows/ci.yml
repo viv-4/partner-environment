@@ -1,5 +1,8 @@
 name: CI
-on: push
+on:
+  push:
+  schedule:
+    - cron: "0 15 * * 1-5"
 jobs:
   test:
     name: "${{ !matrix.stable && '🚧 ' || '' }}version: ${{ matrix.version != '' && matrix.version || 'empty'}}, os: ${{ matrix.os }}"
