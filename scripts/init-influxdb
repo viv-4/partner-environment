@@ -23,35 +23,35 @@ echo "░░░ Initialising InfluxDB API"
 # Wait for the service to be available
 wait=0
 max_wait=60
-until [ $wait -eq $max_wait ] || docker exec $instance influx ping > /dev/null; do
-  sleep $(( wait++ ))
+until [ $wait -eq $max_wait ] || docker exec $instance influx ping >/dev/null; do
+    sleep $((wait++))
 done
 if [ $wait -eq $max_wait ]; then
-  echo "░░░ Timeout waiting for InfluxDB to be ready"
-  exit 1
+    echo "░░░ Timeout waiting for InfluxDB to be ready"
+    exit 1
 fi
 
 # Ensure the bucket in the environment is configured
 docker exec "$instance" influx setup --force \
-  --username "${username}" \
-  --password "${password}" \
-  --org "${org}" \
-  --bucket "${bucket}" \
-  --token "${INFLUX_API_KEY}" \
-  --retention "${retention}" 2> /dev/null || echo "Already initialised"
+    --username "${username}" \
+    --password "${password}" \
+    --org "${org}" \
+    --bucket "${bucket}" \
+    --token "${INFLUX_API_KEY}" \
+    --retention "${retention}" 2>/dev/null || echo "Already initialised"
 
 # List buckets in the InfluxDB instance
-docker exec -e INFLUX_TOKEN="${INFLUX_API_KEY}" "$instance" influx bucket list -o "${org}" -n "${bucket}" --hide-headers > /dev/null
+docker exec -e INFLUX_TOKEN="${INFLUX_API_KEY}" "$instance" influx bucket list -o "${org}" -n "${bucket}" --hide-headers >/dev/null
 bucket_check_status=$?
 
 if [ $bucket_check_status -eq 0 ]; then
-  echo "InfluxDB configured. API key is located in ${influx_key_env}."
-  echo "org: ${org}"
-  echo "bucket: ${bucket}"
-  echo "username: ${username}"
-  echo "password: ${password}"
-  exit 0
+    echo "InfluxDB configured. API key is located in ${influx_key_env}."
+    echo "org: ${org}"
+    echo "bucket: ${bucket}"
+    echo "username: ${username}"
+    echo "password: ${password}"
+    exit 0
 else
-  echo "Bucket ${bucket} not found under Org ${org}"
-  exit 1
+    echo "Bucket ${bucket} not found under Org ${org}"
+    exit 1
 fi

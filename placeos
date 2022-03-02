@@ -17,7 +17,7 @@ banner() (
 load_environment() {
     # Save the existing environment
     ext_env=$(mktemp)
-    export -p > "${ext_env}"
+    export -p >"${ext_env}"
     set -o allexport
 
     # Load contents of .env
@@ -30,16 +30,16 @@ load_environment() {
     if [[ $PLACEOS_TAG =~ ^placeos-[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
 
         if [[ $PLACEOS_TAG < "placeos-1.2108.2" ]]; then
-          PLACE_STAFF_API_TAG="nightly"
-          PLACE_NGINX_TAG="staff-api"
+            PLACE_STAFF_API_TAG="nightly"
+            PLACE_NGINX_TAG="staff-api"
         fi
 
         if [[ $PLACEOS_TAG < "placeos-1.2109.0" ]]; then
-          PLACE_FRONTEND_LOADER_IMAGE="frontends"
+            PLACE_FRONTEND_LOADER_IMAGE="frontends"
         fi
 
         if [[ $PLACEOS_TAG < "placeos-1.2111.0" ]]; then
-          PLACE_SEARCH_INGEST_IMAGE="rubber-soul"
+            PLACE_SEARCH_INGEST_IMAGE="rubber-soul"
         fi
     fi
 
@@ -375,7 +375,7 @@ task() (
     done
 
     # Print help when no task passed
-    if [[ -z "${PARAMS}" ]]; then
+    if [[ -z ${PARAMS} ]]; then
         ./scripts/run-sam-task help
         exit 0
     fi

@@ -5,11 +5,11 @@ set -eu
 COMPOSE_FILES=('-f ./docker-compose.yml')
 
 for arg in "$@"; do
-  case $arg in
-  -e | --elk)
-    COMPOSE_FILES+=('-f ./compose-files/elk/docker-compose.yml')
-    ;;
-  esac
+    case $arg in
+    -e | --elk)
+        COMPOSE_FILES+=('-f ./compose-files/elk/docker-compose.yml')
+        ;;
+    esac
 done
 
 docker-compose ${COMPOSE_FILES[@]} pull --quiet
