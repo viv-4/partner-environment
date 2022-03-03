@@ -17,13 +17,10 @@ jobs:
           - ubuntu-latest
         version:
           - "" # Test an empty tag
-          - placeos-1.2107.4
-          - placeos-1.2108.4
-          - placeos-1.2109.1
-          - placeos-1.2110.5
-          - placeos-1.2111.2
           - placeos-1.2112.0
           - placeos-1.2201.1
+          - placeos-1.2202.2
+          - placeos-1.2203.1
         include:
           - version: nightly
             stable: false
