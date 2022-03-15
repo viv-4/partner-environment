@@ -322,6 +322,8 @@ services:
     restart: always
     container_name: dispatch
     hostname: dispatch
+    depends_on:
+      - nginx
     env_file:
       - *secret-key-env
     <<: *std-network
@@ -388,6 +390,8 @@ services:
     hostname: chronograf
     <<: *std-network
     <<: *std-logging
+    depends_on:
+      - influxdb
     env_file:
       - *influxdb-api-key
       - .env.chronograf  # Contains TOKEN_SECRET for OAuth integration
@@ -414,6 +418,8 @@ services:
     hostname: mosquitto
     <<: *std-network
     <<: *std-logging
+    depends_on:
+      - nginx
     volumes:
       - ${PWD}/config/mosquitto/mosquitto.conf:/etc/mosquitto/mosquitto.conf
     environment:
@@ -493,6 +499,7 @@ services:
     << : *std-network
     << : *std-logging
     depends_on:
+      - elastic
       - validate-logstash-config
     volumes:
       - ${PWD}/config/logstash/config:/config
@@ -522,6 +529,8 @@ services:
     hostname: logspout
     << : *std-network
     << : *std-logging
+    depends_on:
+      - logstash
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     command: gelf://${LOGSTASH_HOST}:${LOGSTASH_PORT}
@@ -535,6 +544,8 @@ services:
     hostname: kibana
     << : *std-network
     << : *std-logging
+    depends_on:
+      - elastic
     environment:
       <<: *elastic-client-env
       NODE_OPTIONS: "--max-old-space-size=200" # fixes memory leak (https://github.com/elastic/kibana/issues/5170)
@@ -554,6 +565,8 @@ services:
     hostname: curator
     << : *std-network
     << : *std-logging
+    depends_on:
+      - elastic
     volumes:
       - ${PWD}/config/curator/action-file.yml:/action-file.yml
       - ${PWD}/config/curator/config.yml:/config.yml
@@ -569,6 +582,8 @@ services:
     user: root
     << : *std-network
     << : *std-logging
+    depends_on:
+      - elastic
     environment:
       <<: *elastic-client-env
     volumes:
