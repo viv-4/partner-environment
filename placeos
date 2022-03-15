@@ -75,6 +75,17 @@ logfile="${base_path}/.logs/$(date +"%Y%m%d%H%M").log"
 
 COMPOSE_PROJECT_NAME=placeos
 
+# Helpers
+###################################################################################################
+
+unknown_argument() (
+    unknown_arg="${1}"
+    usage="${2}"
+    [ -n "${unknown_arg}" ] && echo -e "░░░ ${red}Unknown option:${reset} ${unknown_arg}"
+    eval "${usage}"
+    exit 1
+)
+
 abort() (
     echo -e "░░░ ${red}${1}${reset}"
     echo "░░░ Logs can be found in ${logfile}"
@@ -101,6 +112,9 @@ run_or_abort() {
         [ $exit_code -eq 0 ] || abort "${failure:-"${task} failed with ${exit_code}"}"
     fi
 }
+
+# Start
+###################################################################################################
 
 hard_reset() (
     # TODO: drop influxdb tables
@@ -134,14 +148,18 @@ Arguments:
     --password PASSWORD     Password for created admin account. [default: development]
     --domain DOMAIN         Domain to configure. [default: localhost:8443]
     --application APP       Application to configure. [default: backoffice]
+    --analytics             Set-up analytics stack, including MQTT & InfluxDB & Chronograf
+    --kibana                Set-up Kibana and Elastic stack.
     -v, --verbose           Write logs to STDOUT in addition to the log file.
     -h, --help              Display this message.
 EOF
 )
 
 start_environment() (
-    SERVICES=('')
+    PROFILES=""
     hard_reset=false
+    enable_analytics=false
+    enable_kibana=false
     email_argument=""
     password_argument=""
     domain_argument=""
@@ -177,6 +195,12 @@ start_environment() (
             application_arguement="${1}"
             shift
             ;;
+        --analytics)
+            enable_analytics=true
+            ;;
+        --kibana)
+            enable_kibana=true
+            ;;
         -v | --verbose)
             VERBOSE="true"
             ;;
@@ -185,12 +209,7 @@ start_environment() (
             exit 0
             ;;
         *)
-            if [ -n "${command}" ]; then
-                echo -e "░░░ ${red}Unknown option:${reset} ${command}"
-            else
-                start_environment__usage
-                exit 1
-            fi
+            unknown_argument "${command}" "start_environment__usage"
             ;;
         esac
     done
@@ -198,8 +217,6 @@ start_environment() (
     banner
 
     load_environment
-
-    # Override .env arguments with CLI arguments
 
     echo "░░░ Starting PlaceOS <${PLACEOS_TAG}>"
 
@@ -257,19 +274,25 @@ start_environment() (
         echo ""
     done
 
-    # run_or_abort \
-    #     "${base_path}/scripts/metricbeat" \
-    #     "Checking Host OS..." \
-    #     "Error occurred while checking Host OS."
-
     # Write the email so as to not prompt the user again.
     echo "PLACE_EMAIL=${PLACE_EMAIL}" >"${EMAIL_ENV}"
     # TODO: use init check instead of writing the password.
     echo "PLACE_PASSWORD=${PLACE_PASSWORD}" >>"${EMAIL_ENV}"
 
+    if [[ $ENABLE_ANALYTICS == "true" ]] || [[ $enable_analytics == "true" ]]; then
+        PROFILES+=" --profile analytics"
+    fi
+
     if [[ -d "${base_path}/.htpasswd-kibana" ]]; then
         echo "░░░ Detected malformed auth file. Cleaning up"
         rm -r "${base_path}/.htpasswd-kibana"
+    fi
+
+    if [[ $ENABLE_KIBANA == "true" ]] || [[ $enable_kibana == "true" ]]; then
+      PROFILES+=" --profile kibana"
+      if [[ $(uname) == "Linux" ]]; then
+        PROFILES+=" --profile metricbeat"
+      fi
     fi
 
     run_or_abort \
@@ -278,14 +301,21 @@ start_environment() (
         "Failed to generate secrets."
 
     run_or_abort \
-        "${base_path}/scripts/start-services ${SERVICES[@]}" \
+        "docker-compose ${PROFILES} pull -q" \
+        "Pulling images..." \
+        "Failed to pull images."
+
+    run_or_abort \
+        "docker-compose ${PROFILES} up -d" \
         "Bringing up services..." \
         "Failed to start services."
 
-    run_or_abort \
-        "${base_path}/scripts/init-influxdb" \
-        "Configuring InfluxDB..." \
-        "Failed to configure InfluxDB."
+    if [[ $PROFILES == *"analytics"* ]]; then
+        run_or_abort \
+            "${base_path}/scripts/init-influxdb" \
+            "Configuring InfluxDB..." \
+            "Failed to configure InfluxDB."
+    fi
 
     [ ${hard_reset} == "true" ] && hard_reset
 
@@ -297,6 +327,9 @@ start_environment() (
     echo "░░░ PlaceOS initialised. Login to https://$PLACE_DOMAIN/backoffice/ with..."
     echo "░░░ $PLACE_EMAIL:$PLACE_PASSWORD"
 )
+
+# Stop
+###################################################################################################
 
 stop_environment__usage() (
     cat <<EOF
@@ -323,12 +356,7 @@ stop_environment() (
             VERBOSE="true"
             ;;
         *)
-            if [ -n "${command}" ]; then
-                echo -e "░░░ ${red}Unknown option:${reset} ${command}"
-            else
-                stop_environment__usage
-                exit 1
-            fi
+            unknown_argument "${command}" "stop_environment__usage"
             ;;
         esac
     done
@@ -338,6 +366,9 @@ stop_environment() (
         "Tearing down PlaceOS" \
         "Failed to teardown PlaceOS"
 )
+
+# Task
+###################################################################################################
 
 task__usage() (
     cat <<EOF
@@ -383,6 +414,9 @@ task() (
     ./scripts/run-sam-task ${PARAMS}
 )
 
+# Update
+###################################################################################################
+
 update_environment__usage() (
     cat <<EOF
 Usage: ./placeos update [-h|--help]
@@ -404,12 +438,7 @@ update_environment() (
             exit 0
             ;;
         *)
-            if [ -n "${command}" ]; then
-                echo -e "░░░ ${red}Unknown option:${reset} ${command}"
-            else
-                update_environment__usage
-                exit 1
-            fi
+            unknown_argument "${command}" "update_environment__usage"
             ;;
         esac
     done
@@ -419,6 +448,9 @@ update_environment() (
     # Version info can be extracted from the heads of version branches in a file containing the version
     abort "Not implemented."
 )
+
+# Root Command
+###################################################################################################
 
 usage() (
     cat <<EOF
@@ -461,11 +493,6 @@ update)
     usage
     ;;
 *)
-    if [ -n "$command" ]; then
-        echo -e "░░░ ${red}Unknown command:${reset} $command"
-    else
-        usage
-        exit 1
-    fi
+    unknown_argument "${command}" "usage"
     ;;
 esac

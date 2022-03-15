@@ -34,6 +34,8 @@ x-jwt-public-key-env: &jwt-public-key-env .env.public_key
 x-secret-key-env: &secret-key-env .env.secret_key
 
 x-elastic-client-env: &elastic-client-env
+  ELASTIC_HOST: ${ELASTIC_HOST:-elastic}
+  ELASTIC_PORT: ${ELASTIC_PORT:-9200}
   ES_HOST: ${ELASTIC_HOST:-elastic}
   ES_PORT: ${ELASTIC_PORT:-9200}
 
@@ -191,9 +193,12 @@ services:
       PLACE_LOADER_WWW: www
 
   source:
-    image: docker.io/placeos/source:${PLACE_SOURCE_TAG:-nightly}
+    image: placeos/source:${PLACE_SOURCE_TAG:-nightly}
+    profiles:
+      - analytics
     restart: always
     container_name: source
+    hostname: source
     <<: *std-network
     <<: *std-logging
     depends_on:
@@ -235,6 +240,7 @@ services:
   postgres: # Database used by Staff API
     image: postgres:${POSTGRES_VERSION:-13-alpine}
     container_name: postgres
+    hostname: postgres
     restart: unless-stopped
     <<: *std-network
     <<: *std-logging
@@ -248,6 +254,7 @@ services:
   staff: # Staff API
     image: placeos/staff-api:${PLACE_STAFF_API_TAG:-nightly}
     container_name: staff
+    hostname: staff
     restart: unless-stopped
     <<: *std-network
     <<: *std-logging
@@ -323,12 +330,13 @@ services:
   # Resources
 
   elastic:
-    image: blacktop/elasticsearch:${ELASTIC_VERSION:-7.9.1}
+    image: blacktop/elasticsearch:${ELASTIC_VERSION:-7.10.2}
     restart: always
     container_name: elastic
     hostname: elastic
     healthcheck:
       test: wget -q --no-verbose --tries=1 --spider http://localhost:9200/_cat/health
+      start_period: 1m
     <<: *std-network
     <<: *std-logging
     volumes:
@@ -356,11 +364,13 @@ services:
 
   influxdb:
     image: influxdb:${INFLUXDB_IMAGE_TAG:-2.0.8-alpine}
-    container_name: influx
+    profiles:
+      - analytics
     restart: always
+    container_name: influx
+    hostname: influx
     <<: *std-network
     <<: *std-logging
-    hostname: influx
     healthcheck:
       test: influx bucket list
     volumes:
@@ -368,11 +378,14 @@ services:
         source: influx-data
         target: /root/.influxdbv2
     command: "--reporting-disabled"
-    
+
   chronograf:
     image: chronograf:${CHRONOGRAF_IMAGE_TAG:-1.9}
-    container_name: chronograf
+    profiles:
+      - analytics
     restart: always
+    container_name: chronograf
+    hostname: chronograf
     <<: *std-network
     <<: *std-logging
     env_file:
@@ -394,6 +407,8 @@ services:
 
   mosquitto:
     image: iegomez/mosquitto-go-auth:${MOSQUITTO_IMAGE_TAG:-latest}
+    profiles:
+      - analytics
     restart: always
     container_name: mosquitto
     hostname: mosquitto
@@ -466,3 +481,103 @@ services:
         target: /data/rethinkdb_data
     environment:
       TZ: $TZ
+
+  # Aggregates logs and forwards them to Elasticsearch.
+  logstash:
+    image: blacktop/logstash:${ELASTIC_VERSION:-7.10.2}
+    profiles:
+      - kibana
+    restart: always
+    container_name: logstash
+    hostname: logstash
+    << : *std-network
+    << : *std-logging
+    depends_on:
+      - validate-logstash-config
+    volumes:
+      - ${PWD}/config/logstash/config:/config
+      - ${PWD}/config/logstash/patterns:/opt/logstash/extra_patterns
+    command: logstash -f /config
+
+  # Run 'docker-compose run --rm validate-logstash-config' to quickly check the logstash config.
+  validate-logstash-config:
+    image: blacktop/logstash:${ELASTIC_VERSION:-7.10.2}
+    profiles:
+      - kibana
+    restart: "no"
+    container_name: validate-logstash
+    << : *std-network
+    << : *std-logging
+    volumes:
+      - ${PWD}/config/logstash/config:/config
+    command: logstash -t -f /config
+
+  # Sends all container json-file logs to logstash
+  logspout:
+    image: vincit/logspout-gelf:3.2.6-alpine
+    profiles:
+      - kibana
+    restart: unless-stopped
+    container_name: logspout
+    hostname: logspout
+    << : *std-network
+    << : *std-logging
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: gelf://${LOGSTASH_HOST}:${LOGSTASH_PORT}
+
+  kibana:
+    image: blacktop/kibana:${ELASTIC_VERSION:-7.10.2}
+    profiles:
+      - kibana
+    restart: always
+    container_name: kibana
+    hostname: kibana
+    << : *std-network
+    << : *std-logging
+    environment:
+      <<: *elastic-client-env
+      NODE_OPTIONS: "--max-old-space-size=200" # fixes memory leak (https://github.com/elastic/kibana/issues/5170)
+      HTTPS_METHOD: "nohttp"
+      ELASTICSEARCH_HOSTS: "http://${ELASTIC_HOST}:${ELASTIC_PORT}"
+      SERVER_BASEPATH: "/${PLACE_METRICS_ROUTE}"
+      SERVER_REWRITEBASEPATH: "true"
+      SERVER_PUBLICBASEURL: "https://${PLACE_DOMAIN}/${PLACE_METRICS_ROUTE}"
+
+  # Takes care of piling up Elasticsearch indices/logs. Can do many other things as well.
+  # Set up a cron job that runs "docker-compose run --rm curator --config /config.yml /action-file.yml" every once in a while.
+  curator:
+    image: bobrik/curator:5.8.1
+    profiles:
+      - kibana
+    container_name: curator
+    hostname: curator
+    << : *std-network
+    << : *std-logging
+    volumes:
+      - ${PWD}/config/curator/action-file.yml:/action-file.yml
+      - ${PWD}/config/curator/config.yml:/config.yml
+
+  # Gets metrics from host machine and send to elastic
+  metricbeat:
+    image: elastic/metricbeat:${ELASTIC_VERSION:-7.10.2}
+    profiles:
+      - metricbeat
+    restart: unless-stopped
+    container_name: metricbeat
+    hostname: metricbeat
+    user: root
+    << : *std-network
+    << : *std-logging
+    environment:
+      <<: *elastic-client-env
+    volumes:
+      - /proc:/hostfs/proc:ro
+      - /sys/fs/cgroup:/hostfs/sys/fs/cgroup:ro
+      - /:/hostfs:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ${PWD}/config/metricbeat.yml:/usr/share/metricbeat/metricbeat.yml
+    cap_add:
+      - SYS_PTRACE
+      - DAC_READ_SEARCH
+    command: ["metricbeat", "-e", "--strict.perms=false", "-system.hostfs=/hostfs", "-E", "output.elasticsearch.hosts=[$ELASTIC_HOST:$ELASTIC_PORT]"]
