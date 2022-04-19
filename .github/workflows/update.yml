@@ -33,11 +33,6 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v3
 
-    - name: Configure git user
-      run: |
-        git config user.email "robots@place.technology"
-        git config user.name "PlaceOS Robot"
-
     - name: Update files
       id: update
       shell: bash
@@ -45,42 +40,37 @@ jobs:
         set -euo pipefail
         set -x #echo on
 
-        branch='release/${{ needs.latest.outputs.version }}'
+        branch=release/${{ needs.latest.outputs.version }}
         echo ::set-output name=branch::$branch
-
-        # Switch branch to release/${{ needs.latest.outputs.version }}
-        git checkout -b "$branch"
 
         # Update `.env`
         sed --in-place=.bak -E 's/^PLACEOS_TAG=.*/PLACEOS_TAG=${PLACEOS_TAG:-placeos-${{ needs.latest.outputs.version }}}/g' \
             .env
 
         # Update CI matrix
-        sed --in-place=.bak -E 's/(          - latest)/          - placeos-${{ needs.latest.outputs.version }}\n\1/g' \
+        sed --in-place=.bak -E 's/^([ ]{10}- )(latest)/\1placeos-${{ needs.latest.outputs.version }}\n\1\2/g' \
             .github/workflows/ci.yml
 
-        # Commit
-        git commit -m 'build: update to ${{ needs.latest.outputs.version }}' -- \
-            .env \
-            .github/workflows/ci.yml
-
-    - name: Push
-      uses: ad-m/github-push-action@master
+    - name: Commit and Push
+      uses: github-actions-x/commit@v2.9
       with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        branch: ${{ steps.update.outputs.branch }}
+        message: 'build: update to ${{ needs.latest.outputs.version }}'
+        files: .env .github/workflows/ci.yml
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        push-branch: ${{ steps.update.outputs.branch }}
+        name: PlaceOS Robot
+        email: robots@placeos.com
 
     - name: Create PR
       shell: bash
       run: |
-        gh auth login
+        # Login with GitHub CLI
+        echo ${{ secrets.GITHUB_TOKEN }} | gh auth login --with-token
 
         # Create PR
         gh pr create \
             --fill \
-            --head "${{ steps.update.outputs.branch }}" \
+            --head '${{ steps.update.outputs.branch }}' \
             --label 'type: maintenance' \
             --base master \
-            --body 'See the details for `placeos-${{ steps.latest.outputs.version }}`[here](https://github.com/PlaceOS/PlaceOS/releases/tag/${{ needs.latest.outputs.version }}).'
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            --body 'See the details for `placeos-${{ needs.latest.outputs.version }}`[here](https://github.com/PlaceOS/PlaceOS/releases/tag/${{ needs.latest.outputs.version }}).'
