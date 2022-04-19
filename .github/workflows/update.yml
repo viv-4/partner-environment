@@ -12,7 +12,7 @@ jobs:
     name: Get latest PlaceOS version
     runs-on: ubuntu-latest
     outputs:
-      version: ${{ steps.latest.outputs.version }}
+      version: ${{ steps.version.outputs.version }}
     steps:
     - name: Checkout
       uses: actions/checkout@v3
