@@ -39,12 +39,14 @@ jobs:
         git config user.name "PlaceOS Robot"
 
     - name: Update files
+      id: update
       shell: bash
       run: |
         set -euo pipefail
         set -x #echo on
 
         branch='release/${{ needs.latest.outputs.version }}'
+        echo ::set-output name=branch::$branch
 
         # Switch branch to release/${{ needs.latest.outputs.version }}
         git checkout -b "$branch"
@@ -58,19 +60,27 @@ jobs:
             .github/workflows/ci.yml
 
         # Commit
-        git commit -m 'build: update to ${{ needs.latest.outputs.version }}' \
+        git commit -m 'build: update to ${{ needs.latest.outputs.version }}' -- \
             .env \
             .github/workflows/ci.yml
 
-        git push -u origin "$branch"
+    - name: Push
+      uses: ad-m/github-push-action@master
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        branch: ${{ steps.update.outputs.branch }}
+
+    - name: Create PR
+      shell: bash
+      run: |
+        gh auth login
 
         # Create PR
         gh pr create \
             --fill \
-            --head "$branch" \
+            --head "${{ steps.update.outputs.branch }}" \
             --label 'type: maintenance' \
             --base master \
             --body 'See the details for `placeos-${{ steps.latest.outputs.version }}`[here](https://github.com/PlaceOS/PlaceOS/releases/tag/${{ needs.latest.outputs.version }}).'
-
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
