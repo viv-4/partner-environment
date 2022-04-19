@@ -39,31 +39,38 @@ jobs:
         git config user.name "PlaceOS Robot"
 
     - name: Update files
+      shell: bash
       run: |
+        set -euo pipefail
+        set -x #echo on
+
         branch='release/${{ needs.latest.outputs.version }}'
 
         # Switch branch to release/${{ needs.latest.outputs.version }}
         git checkout -b "$branch"
 
         # Update `.env`
-        sed -i '.bak' -E 's/^PLACEOS_TAG=.*/PLACEOS_TAG=${PLACEOS_TAG:-placeos-${{ needs.placeos-latest.outputs.version }}}/g' \
-          .env
+        sed --in-place=.bak -E 's/^PLACEOS_TAG=.*/PLACEOS_TAG=${PLACEOS_TAG:-placeos-${{ needs.latest.outputs.version }}}/g' \
+            .env
 
         # Update CI matrix
-        sed -i '.bak' -E 's/(          - latest)/          - ${{ needs.latest.outputs.version }}\n\1/g' \
-          .github/workflows/ci.yml
+        sed --in-place=.bak -E 's/(          - latest)/          - placeos-${{ needs.latest.outputs.version }}\n\1/g' \
+            .github/workflows/ci.yml
 
         # Commit
-        git commit --message='build: update to ${{ needs.latest.outputs.version }}' \
-          .env \
-          .github/workflows/ci.yml
+        git commit -m 'build: update to ${{ needs.latest.outputs.version }}' \
+            .env \
+            .github/workflows/ci.yml
+
+        git push -u origin "$branch"
 
         # Create PR
         gh pr create \
-          --fill \
-          --head "$branch" \
-          --label 'type: maintenance' \
-          --base master \
-          --body 'See the details for `placeos-${{ steps.get-latest.outputs.version }}`[here](https://github.com/PlaceOS/PlaceOS/releases/tag/${{ needs.latest.outputs.version }}).'
+            --fill \
+            --head "$branch" \
+            --label 'type: maintenance' \
+            --base master \
+            --body 'See the details for `placeos-${{ steps.latest.outputs.version }}`[here](https://github.com/PlaceOS/PlaceOS/releases/tag/${{ needs.latest.outputs.version }}).'
+
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
