@@ -1,0 +1,69 @@
+name: Update to latest release
+
+on:
+  repository_dispatch:
+    types: [update]
+
+env:
+  VERSION_REGEX: '^[0-9]+\.[0-9]{4}\.[0-9]+$'
+
+jobs:
+  latest:
+    name: Get latest PlaceOS version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.latest.outputs.version }}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+      inputs:
+        fetch-depth: 0
+        repository: PlaceOS/PlaceOS
+    - name: Get latest version from PlaceOS/PlaceOS
+      id: version
+      run: |
+        latest=$(git tag --list | grep --extended-regexp '${{ env.VERSION_REGEX }}' | sort | tail -1)
+        echo ::set-output name=version::$latest
+
+  update:
+    name: Update
+    needs: latest
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+
+    - name: Configure git user
+      run: |
+        git config user.email "robots@place.technology"
+        git config user.name "PlaceOS Robot"
+
+    - name: Update files
+      run: |
+        branch='release/${{ needs.latest.outputs.version }}'
+
+        # Switch branch to release/${{ needs.latest.outputs.version }}
+        git checkout "$branch"
+
+        # Update `.env`
+        sed -i '.bak' -E 's/^PLACEOS_TAG=.*/PLACEOS_TAG=${PLACEOS_TAG:-placeos-${{ needs.placeos-latest.outputs.version }}}/g' \
+          .env
+
+        # Update CI matrix
+        sed -i '.bak' -E 's/${{ env.VERSION_REGEX }}/${{ needs.latest.outputs.version }}/g' \
+          .github/workflows/ci.yml
+
+        # Commit
+        git commit --message='build: update to ${{ needs.latest.outputs.version }}' \
+          .env \
+          .github/workflows/ci.yml
+
+        # Create PR
+        gh pr create \
+          --fill \
+          --head "$branch" \
+          --label 'type: maintenance' \
+          --base master \
+          --body 'See the details for `placeos-${{ steps.get-latest.outputs.version }}`[here](https://github.com/PlaceOS/PlaceOS/releases/tag/${{ needs.latest.outputs.version }}).'
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

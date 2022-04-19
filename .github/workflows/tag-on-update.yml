@@ -1,0 +1,25 @@
+on:
+  pull_request:
+    branches:
+      - master
+    types: [closed]
+
+jobs:
+  tag:
+    name: Tag new release
+    if: ${{ github.event.pull_request.merged && startsWith(github.event.pull_request.title, 'release/') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Configure git user
+        run: |
+          git config user.email "robots@place.technology"
+          git config user.name "PlaceOS Robot"
+
+      - name: Tag the latest release
+        run: |
+          source .env
+          git tag "${PLACEOS_TAG}"
+          git push --tags
