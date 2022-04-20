@@ -54,11 +54,14 @@ These will need to be installed prior to running `./placeos start`:
 ```shell-session
 Usage: ./placeos [-h|--help] [command]
 
-Helper script for interfacing with the PlaceOS Partner Environment
+Helper script for interfacing with the PlaceOS Partner Environment.
 
 Command:
     start                   Start the environment.
     stop                    Stops the environment.
+    update                  Update the platform version.
+    upgrade                 Upgrade the Partner Environment.
+    task                    Runs a task in the environment.
     help                    Display this message.
 ```
 
@@ -67,7 +70,7 @@ Command:
 ```shell-session
 Usage: ./placeos start [-h|--help]
 
-Start the PlaceOS environment
+Start the PlaceOS environment.
 
 Arguments:
     --email EMAIL           Email to setup an admin account for. [default: support@place.tech]
@@ -84,11 +87,39 @@ Arguments:
 ```shell-session
 Usage: ./placeos stop [-h|--help]
 
-Stop the PlaceOS environment
+Stop the PlaceOS environment.
 
 Arguments:
     -v, --verbose           Write logs to STDOUT in addition to the log file.
-    -h, --help              Display this message
+    -h, --help              Display this message.
+```
+
+### `./placeos update`
+
+```
+Usage: ./placeos update [-h|--help] [VERSION]
+
+Modifies PLACEOS_TAG to the selected PlaceOS platform version.
+If VERSION is omitted, defaults to the most recent stable version.
+
+Arguments:
+    --list                  List the available versions.
+    -v, --verbose           Write logs to STDOUT in addition to the log file.
+    -h, --help              Display this message.
+```
+
+### `./placeos upgrade`
+
+```
+Usage: ./placeos upgrade [-h|--help] [VERSION]
+
+Upgrades the PlaceOS Partner Environment.
+If VERSION is omitted, defaults to the most recent stable version.
+
+Arguments:
+    --list                  Lists versions of the Partner Environment.
+    -v, --verbose           Write logs to STDOUT in addition to the log file.
+    -h, --help              Display this message.
 ```
 
 ### `$ ./placeos task`
@@ -99,8 +130,8 @@ Usage: ./placeos task [-h|--help|help] [-t|--task] <task> [help|...] [arguments.
 Run a task in the PlaceOS environment.
 
 Arguments:
-    -h, --help              Display this message
-    -t, ---tasks            Display list of available tasks
+    -h, --help              Display this message.
+    -t, ---tasks            Display list of available tasks.
 ```
 
 ## Drivers

@@ -1,4 +1,5 @@
 #! /usr/bin/env bash
+# shellcheck disable=1003,1090
 
 banner() (
     echo
@@ -78,17 +79,23 @@ COMPOSE_PROJECT_NAME=placeos
 # Helpers
 ###################################################################################################
 
+PROMPT="░░░"
+
 unknown_argument() (
     unknown_arg="${1}"
     usage="${2}"
-    [ -n "${unknown_arg}" ] && echo -e "░░░ ${red}Unknown option:${reset} ${unknown_arg}"
+    [ -n "${unknown_arg}" ] && prompt "${red}Unknown option:${reset} ${unknown_arg}"
     eval "${usage}"
     exit 1
 )
 
+prompt() (
+    echo -e "${PROMPT} ${1}"
+)
+
 abort() (
-    echo -e "░░░ ${red}${1}${reset}"
-    echo "░░░ Logs can be found in ${logfile}"
+    prompt "${red}${1}${reset}"
+    prompt "Logs can be found in ${logfile}"
     exit 1
 )
 
@@ -100,15 +107,15 @@ run_or_abort() {
 
     exit_code=0
     if [ "${VERBOSE}" == "false" ]; then
-        start_spinner "░░░ ${start}"
+        start_spinner "${PROMPT} ${start}"
         eval "${task} >>${logfile} 2>&1" || exit_code=$?
         stop_spinner $exit_code
     else
-        echo "░░░ ${start}"
+        prompt "${start}"
         eval "${task} 2>&1 | tee -a ${logfile}" || exit_code=$?
     fi
 
-    if [ $ignore_failure != "true" ]; then
+    if [ "$ignore_failure" != "true" ]; then
         [ $exit_code -eq 0 ] || abort "${failure:-"${task} failed with ${exit_code}"}"
     fi
 }
@@ -140,7 +147,7 @@ start_environment__usage() (
     cat <<EOF
 Usage: ./placeos start [-h|--help]
 
-Start the PlaceOS environment
+Start the PlaceOS environment.
 
 Arguments:
     --hard-reset            Reset the environment to a default state.
@@ -169,7 +176,7 @@ start_environment() (
         shift
         case ${command} in
         --hard-reset)
-            read -rp "░░░ $(echo -e "${red}Warning:${reset}") This will reset your environment. Would you like to continue (y/n)? " choice
+            read -rp "${PROMPT} $(echo -e "${red}Warning:${reset}") This will reset your environment. Would you like to continue (y/n)? " choice
             case "${choice}" in
             y | Y | YES | yes)
                 hard_reset=true
@@ -218,20 +225,20 @@ start_environment() (
 
     load_environment
 
-    echo "░░░ Starting PlaceOS <${PLACEOS_TAG}>"
+    prompt "Starting PlaceOS <${PLACEOS_TAG}>"
 
-    [ $VERBOSE == "false" ] && echo "░░░ For detailed logging, run \`tail -f ${logfile}\`"
+    [ $VERBOSE == "false" ] && prompt "For detailed logging, run \`tail -f ${logfile}\`"
 
     EMAIL_ENV="${base_path}/.env.email"
 
     set -a
     if [ -f "${EMAIL_ENV}" ]; then
-        . ${EMAIL_ENV}
+        . "${EMAIL_ENV}"
     elif [ -n "${email_argument}" ]; then
         # Override env with CLI arguments
         PLACE_EMAIL=${email_argument}
         # Write the email so as to not prompt the user again.
-        echo "PLACE_EMAIL=${PLACE_EMAIL}" >${EMAIL_ENV}
+        echo "PLACE_EMAIL=${PLACE_EMAIL}" >"${EMAIL_ENV}"
     fi
     set +a
 
@@ -258,7 +265,7 @@ start_environment() (
         PLACE_EMAIL=${PLACE_EMAIL:-"$(git config user.email 2>/dev/null || exit 0)"}
         PLACE_EMAIL=${PLACE_EMAIL:-"support@place.tech"}
 
-        read -rp "░░░ Please enter an email ($(echo -e "${green}default:${reset}") ${PLACE_EMAIL}): " choice
+        read -rp "${PROMPT} Please enter an email ($(echo -e "${green}default:${reset}") ${PLACE_EMAIL}): " choice
         if [ -n "${choice}" ]; then
             PLACE_EMAIL=${choice}
         fi
@@ -268,7 +275,7 @@ start_environment() (
     # TODO: Check for the user before asking for a password
     # TODO: Autogenerate the default password
     while [ -z ${PLACE_PASSWORD+x} ]; do
-        read -srp "░░░ Please enter a password: " choice
+        read -srp "${PROMPT} Please enter a password: " choice
         PLACE_PASSWORD="${choice}"
         # Newline after response
         echo ""
@@ -284,15 +291,15 @@ start_environment() (
     fi
 
     if [[ -d "${base_path}/.htpasswd-kibana" ]]; then
-        echo "░░░ Detected malformed auth file. Cleaning up"
+        prompt "Detected malformed auth file. Cleaning up"
         rm -r "${base_path}/.htpasswd-kibana"
     fi
 
     if [[ $ENABLE_KIBANA == "true" ]] || [[ $enable_kibana == "true" ]]; then
-      PROFILES+=" --profile kibana"
-      if [[ $(uname) == "Linux" ]]; then
-        PROFILES+=" --profile metricbeat"
-      fi
+        PROFILES+=" --profile kibana"
+        if [[ $(uname) == "Linux" ]]; then
+            PROFILES+=" --profile metricbeat"
+        fi
     fi
 
     run_or_abort \
@@ -324,8 +331,8 @@ start_environment() (
         "Initialising PlaceOS with default domain ($PLACE_DOMAIN)..." \
         "Failed to create user entity."
 
-    echo "░░░ PlaceOS initialised. Login to https://$PLACE_DOMAIN/backoffice/ with..."
-    echo "░░░ $PLACE_EMAIL:$PLACE_PASSWORD"
+    prompt "PlaceOS initialised. Login to https://$PLACE_DOMAIN/backoffice/ with..."
+    prompt "$PLACE_EMAIL:$PLACE_PASSWORD"
 )
 
 # Stop
@@ -335,11 +342,11 @@ stop_environment__usage() (
     cat <<EOF
 Usage: ./placeos stop [-h|--help]
 
-Stop the PlaceOS environment
+Stop the PlaceOS environment.
 
 Arguments:
     -v, --verbose           Write logs to STDOUT in addition to the log file.
-    -h, --help              Display this message
+    -h, --help              Display this message.
 EOF
 )
 
@@ -377,8 +384,8 @@ Usage: ./placeos task [-h|--help|help] [-t|--task] <task> [help|...] [arguments.
 Run a task in the PlaceOS environment.
 
 Arguments:
-    -h, --help              Display this message
-    -t, ---tasks            Display list of available tasks
+    -h, --help              Display this message.
+    -t, ---tasks            Display list of available tasks.
 EOF
 )
 
@@ -417,18 +424,81 @@ task() (
 # Update
 ###################################################################################################
 
+PLACEOS_RELEASE_REPO="PlaceOS/PlaceOS"
+
+CALVER_FULL_REGEX='[0-9]+\.[0-9]{4}\.[0-9]+(-rc[0-9]+)?'
+CALVER_MONTH_REGEX='[0-9]+\.[0-9]{4}'
+VERSION_CHANNEL_REGEX='(nightly|preview|latest)'
+
+fetch_release_tags() (
+    git ls-remote https://github.com/${PLACEOS_RELEASE_REPO} |
+        cut -f2 |
+        grep '^refs/tags/' |
+        cut -d'/' -f3 |
+        sort --version-sort --reverse |
+        sed -E "s/($CALVER_FULL_REGEX|$CALVER_MONTH_REGEX)/placeos-\1/g"
+)
+
+# TODO: Change to `release` once the flow has been established
+RELEASE_BRANCH="nightly"
+
+# If called without a version, fetches latest.
+# Otherwise fetches notes for passed version
+changelog() (
+    temporary_changelog="$(mktemp -d)/CHANGELOG.md"
+
+    curl \
+        --silent \
+        --location \
+        --proto-redir -all,https \
+        "https://raw.githubusercontent.com/${PLACEOS_RELEASE_REPO}/${RELEASE_BRANCH}/CHANGELOG.md" >"$temporary_changelog"
+
+    if [[ $# = 1 ]]; then
+        version=$(sed -E 's/placeos-//g' <<<"$1")
+        version_header="$(grep --extended-regexp "^## ${version}$" "$temporary_changelog" | head -1)"
+
+        # Check version is present in changelog
+        if [[ ! $version_header ]]; then
+            prompt "${red}${version} not found in CHANGELOG${reset}"
+            return
+        fi
+
+        # Remove lines before the version header (simplifies range below)
+        sed -i '.bak' -n "/^${version_header}$/,\$p" "$temporary_changelog"
+    else
+        # Extract the latest version
+        version_header="$(grep --extended-regexp "^## ${CALVER_FULL_REGEX}$" "$temporary_changelog" | head -1)"
+        version=$(echo "${version_header}" | sed -E 's/^## (.*)$/\1/')
+    fi
+
+    previous_version_header="$(grep --extended-regexp "^## ${CALVER_FULL_REGEX}$" "$temporary_changelog" | head -2 | tail -1)"
+
+    # Create a URL that directs to the header of the version in the CHANGELOG
+    anchor="$(echo "$version_header" | tr -d "[:blank:]" | tr -d '.#')"
+    changelog_uri="https://github.com/${PLACEOS_RELEASE_REPO}/blob/${RELEASE_BRANCH}/CHANGELOG.md#${anchor}"
+
+    prompt "${green}Changelog for $version${reset}"
+    echo ""
+    echo "For the full PlaceOS release notes, see ${changelog_uri}"
+    sed -E "/^$version_header/,/^$previous_version_header$/!d;//d" "$temporary_changelog"
+)
+
 update_environment__usage() (
     cat <<EOF
-Usage: ./placeos update [-h|--help]
+Usage: ./placeos update [-h|--help] [VERSION]
 
-Update the PlaceOS environment
+Modifies PLACEOS_TAG to the selected PlaceOS platform version.
+If VERSION is omitted, defaults to the most recent stable version.
 
 Arguments:
-    -h, --help              Display this message
+    --list                  List the available versions.
+    -v, --verbose           Write logs to STDOUT in addition to the log file.
+    -h, --help              Display this message.
 EOF
 )
 
 update_environment() (
+    version=""
     while [ ${#} -gt 0 ]; do
         command="${1}"
         shift
@@ -437,16 +507,130 @@ update_environment() (
             update_environment__usage
             exit 0
             ;;
-        *)
+        --list)
+            fetch_release_tags
+            exit 0
+            ;;
+        -v | --verbose)
+            VERBOSE="true"
+            ;;
+        -*)
             unknown_argument "${command}" "update_environment__usage"
+            ;;
+        *)
+            version="$command"
+            [[ ${#} = 0 ]] || abort "Expected a single VERSION argument."
+            break
             ;;
         esac
     done
 
-    # The basic idea is that the script should not need git...
-    # Users will be able to to the next patch, or minor version
-    # Version info can be extracted from the heads of version branches in a file containing the version
-    abort "Not implemented."
+    tags=$(fetch_release_tags)
+
+    if [[ -z "$version" ]]; then
+        version=$(echo "$tags" | grep -Ev "$VERSION_CHANNEL_REGEX" | head -1)
+    fi
+
+    # shellcheck disable=2076
+    if [[ -z "$(grep -E "$CALVER_FULL_REGEX|$CALVER_MONTH_REGEX|$VERSION_CHANNEL_REGEX" <<< $version)" ]]; then
+        prompt "Valid versions are...\n\n$tags\n"
+        abort "${version} is not a valid version."
+    fi
+
+    run_or_abort \
+        "sed -i '.bak' -E 's/^PLACEOS_TAG=.*$/PLACEOS_TAG=\${PLACEOS_TAG:-${version}}/g' '.env'" \
+        "Updating to ${version}" \
+        "Failed to update to ${version}"
+
+    changelog ${version}
+)
+
+# Upgrade
+###################################################################################################
+
+PARTNER_ENV_REPO="place-labs/partner-environment"
+
+fetch_environment_tags() (
+    git ls-remote https://github.com/${PARTNER_ENV_REPO} |
+        cut -f2 |
+        grep -E '^refs/tags/|HEAD' |
+        cut -d'/' -f3 |
+        sort --version-sort --reverse
+)
+
+upgrade_environment__usage() (
+    cat <<EOF
+Usage: ./placeos upgrade [-h|--help] [VERSION]
+
+Upgrades the PlaceOS Partner Environment.
+If VERSION is omitted, defaults to the latest version.
+
+Arguments:
+    --list                  Lists versions of the Partner Environment.
+    -v, --verbose           Write logs to STDOUT in addition to the log file.
+    -h, --help              Display this message.
+EOF
+)
+
+upgrade_environment() (
+    version=""
+    tags="$(fetch_environment_tags)"
+
+    while [ ${#} -gt 0 ]; do
+        command="${1}"
+        shift
+        case ${command} in
+        -h | --help | help)
+            upgrade_environment__usage
+            exit 0
+            ;;
+        --list)
+            echo "$tags"
+            exit 0
+            ;;
+        -v | --verbose)
+            VERBOSE="true"
+            ;;
+        -*)
+            unknown_argument "${command}" "upgrade_environment__usage"
+            ;;
+        *)
+            version="$command"
+            [[ ${#} = 0 ]] || abort "Expected a single VERSION argument."
+            break
+            ;;
+        esac
+    done
+
+    # shellcheck disable=2076
+    if [[ ! " $tags " =~ " $version " ]]; then
+        prompt "Valid versions are...\n\n$tags\n"
+        abort "$version is not a valid version."
+    fi
+
+    # Set git-config values known to fix git errors
+    # Line endings
+    git config --local core.eol lf
+    git config --local core.autocrlf false
+
+    # zeroPaddedFilemode fsck errors
+    git config --local fsck.zeroPaddedFilemode ignore
+    git config --local fetch.fsck.zeroPaddedFilemode ignore
+    git config --local receive.fsck.zeroPaddedFilemode ignore
+
+    last_commit=$(git rev-parse "$version")
+
+    run_or_abort \
+        "git pull --autostash --quiet --rebase origin $version" \
+        "Upgrading PlaceOS Partner Environment..." \
+        "Failed to upgrade PlaceOS Partner Environment"
+
+    # Check if it was really updated or not
+    if [[ "$(git rev-parse HEAD)" = "$last_commit" ]]; then
+        prompt "PlaceOS Partner Environment is already at $version"
+    else
+        prompt "PlaceOS Partner Environment is now at $version"
+    fi
 )
 
 # Root Command
@@ -456,11 +640,13 @@ usage() (
     cat <<EOF
 Usage: ./placeos [-h|--help] [command]
 
-Helper script for interfacing with the PlaceOS Partner Environment
+Helper script for interfacing with the PlaceOS Partner Environment.
 
 Command:
     start                   Start the environment.
     stop                    Stops the environment.
+    update                  Update the platform version.
+    upgrade                 Upgrade the Partner Environment.
     task                    Runs a task in the environment.
     help                    Display this message.
 
@@ -483,11 +669,14 @@ start)
 stop)
     stop_environment "$@"
     ;;
-task)
-    task "$@"
-    ;;
 update)
     update_environment "$@"
+    ;;
+upgrade)
+    upgrade_environment "$@"
+    ;;
+task)
+    task "$@"
     ;;
 -h | --help | help)
     usage
