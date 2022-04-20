@@ -72,7 +72,8 @@ jobs:
         gh pr create \
             --fill \
             --head '${{ steps.update.outputs.branch }}' \
-            --assignee 'place-labs/ops' \
+            --assignee 'placeos-robot' \
+            --reviewer 'place-labs/ops' \
             --label 'type: maintenance' \
             --base master \
             --body 'See the details for `placeos-${{ needs.latest.outputs.version }}`[here](https://github.com/PlaceOS/PlaceOS/releases/tag/${{ needs.latest.outputs.version }}).'
