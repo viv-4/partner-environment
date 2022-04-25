@@ -27,6 +27,7 @@ Use it for driver, frontend, api and infrastructure development.
     - [`$ placeos start`](#-placeos-start)
     - [`$ placeos stop`](#-placeos-stop)
     - [`$ placeos task`](#-placeos-task)
+    - [`$ placeos changelog`](#-placeos-changelog)
     - [`$ placeos update`](#-placeos-update)
     - [`$ placeos upgrade`](#-placeos-upgrade)
     - [`$ placeos uninstall`](#-placeos-uninstall)
@@ -101,6 +102,7 @@ Command:
     start                   Start the environment.
     stop                    Stops the environment.
     task                    Runs a task in the environment.
+    changelog               Displays platform changelog (in markdown).
     update                  Update the platform version.
     upgrade                 Upgrade the Partner Environment.
     uninstall               Uninstalls the Partner Environment.
@@ -146,6 +148,20 @@ Run a task in the PlaceOS environment.
 Arguments:
     -t, ---tasks            Display list of available tasks.
     -h, --help              Display this message.
+```
+
+### `$ placeos changelog`
+
+```shell-session
+Usage: placeos changelog [-h|--help] [--full] [VERSION]
+
+Changelog for the PlaceOS.
+If called without a VERSION, fetches the latest CHANGELOG entry.
+Otherwise, fetches the CHANGELOG entry for passed VERSION.
+
+Arguments:
+    --full                  Include all prior CHANGELOG entries.
+    -h, --help              Display this message
 ```
 
 ### `$ placeos update`

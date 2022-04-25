@@ -126,6 +126,26 @@ run_or_abort() {
     fi
 }
 
+# Version Definitions
+###################################################################################################
+
+PLACEOS_RELEASE_REPO="PlaceOS/PlaceOS"
+# TODO: Change to `release` once the flow has been established
+PLACEOS_RELEASE_BRANCH="nightly"
+
+CALVER_FULL_REGEX='[0-9]+\.[0-9]{4}\.[0-9]+(-rc[0-9]+)?'
+CALVER_MONTH_REGEX='[0-9]+\.[0-9]{4}'
+VERSION_CHANNEL_REGEX='(nightly|preview|latest)'
+
+fetch_release_tags() (
+    git ls-remote https://github.com/${PLACEOS_RELEASE_REPO} |
+        cut -f2 |
+        grep '^refs/tags/' |
+        cut -d'/' -f3 |
+        sort --version-sort --reverse |
+        sed -E "s/($CALVER_FULL_REGEX|$CALVER_MONTH_REGEX)/placeos-\1/g"
+)
+
 # Start
 ###################################################################################################
 
@@ -152,7 +172,7 @@ hard_reset() (
 
 start_environment__usage() (
     cat <<EOF
-Usage: ./placeos start [-h|--help]
+Usage: placeos start [-h|--help]
 
 Start the ${PLACEOS_PRODUCT}.
 
@@ -351,7 +371,7 @@ start_environment() (
 
 stop_environment__usage() (
     cat <<EOF
-Usage: ./placeos stop [-h|--help]
+Usage: placeos stop [-h|--help]
 
 Stop the ${PLACEOS_PRODUCT}.
 
@@ -390,7 +410,7 @@ stop_environment() (
 
 task__usage() (
     cat <<EOF
-Usage: ./placeos task [-h|--help|help] [-t|--task] <task> [help|...] [arguments...]
+Usage: placeos task [-h|--help|help] [-t|--task] <task> [help|...] [arguments...]
 
 Run a task in the ${PLACEOS_PRODUCT}.
 
@@ -433,71 +453,104 @@ task() (
     ./scripts/run-sam-task ${PARAMS}
 )
 
-# Update
+# Changelog
 ###################################################################################################
 
-PLACEOS_RELEASE_REPO="PlaceOS/PlaceOS"
+changelog__usage() (
+    cat <<EOF
+Usage: placeos changelog [-h|--help] [--full] [VERSION]
 
-CALVER_FULL_REGEX='[0-9]+\.[0-9]{4}\.[0-9]+(-rc[0-9]+)?'
-CALVER_MONTH_REGEX='[0-9]+\.[0-9]{4}'
-VERSION_CHANNEL_REGEX='(nightly|preview|latest)'
+Changelog for the PlaceOS environment.
+If called without a VERSION, fetches the latest CHANGELOG entry.
+Otherwise, fetches the CHANGELOG entry for passed VERSION.
 
-fetch_release_tags() (
-    git ls-remote https://github.com/${PLACEOS_RELEASE_REPO} |
-        cut -f2 |
-        grep '^refs/tags/' |
-        cut -d'/' -f3 |
-        sort --version-sort --reverse |
-        sed -E "s/($CALVER_FULL_REGEX|$CALVER_MONTH_REGEX)/placeos-\1/g"
+Arguments:
+    --full                  Include all prior CHANGELOG entries.
+    -h, --help              Display this message
+EOF
 )
 
-# TODO: Change to `release` once the flow has been established
-RELEASE_BRANCH="nightly"
-
-# If called without a version, fetches latest.
-# Otherwise fetches notes for passed version
 changelog() (
+    load_environment
+
+    if [[ $PLACEOS_TAG < "placeos-1.2202.3" ]]; then
+        abort "Please see https://github.com/${PLACEOS_RELEASE_REPO}/blob/${PLACEOS_RELEASE_BRANCH}/CHANGELOG.md for the platform changelog."
+    fi
+
+    version=""
+    full_changelog="false"
+    while [ ${#} -gt 0 ]; do
+        command="${1}"
+        shift
+        case ${command} in
+        -h | --help | help)
+            changelog__usage
+            exit 0
+            ;;
+        --full)
+            full_changelog="true"
+            ;;
+        *)
+            if [[ ${#} == 0 ]]; then
+                version="$command"
+            else
+                changelog__usage
+                exit 1
+            fi
+            ;;
+        esac
+    done
+
     temporary_changelog="$(mktemp -d)/CHANGELOG.md"
 
     curl \
         --silent \
         --location \
         --proto-redir -all,https \
-        "https://raw.githubusercontent.com/${PLACEOS_RELEASE_REPO}/${RELEASE_BRANCH}/CHANGELOG.md" >"$temporary_changelog"
+        "https://raw.githubusercontent.com/${PLACEOS_RELEASE_REPO}/${PLACEOS_RELEASE_BRANCH}/CHANGELOG.md" >"$temporary_changelog"
 
-    if [[ $# = 1 ]]; then
-        version=$(sed -E 's/placeos-//g' <<<"$1")
-        version_header="$(grep --extended-regexp "^## ${version}$" "$temporary_changelog" | head -1)"
+        if [[ $version != "" ]]; then
+            version=$(sed -E 's/placeos-//g' <<<"$version")
+            version_header="$(grep --extended-regexp "^## ${version}$" "$temporary_changelog" | head -1)"
 
-        # Check version is present in changelog
-        if [[ ! $version_header ]]; then
-            prompt "${red}${version} not found in CHANGELOG${reset}"
-            return
+            # Check version is present in changelog
+            if [[ ! $version_header ]]; then
+                abort "${red}${version} not found in CHANGELOG${reset}"
+            fi
+        else
+            # Extract the latest version
+            version_header="$(grep --extended-regexp "^## ${CALVER_FULL_REGEX}$" "$temporary_changelog" | head -1)"
+            version=$(echo "${version_header}" | sed -E 's/^## (.*)$/\1/')
         fi
 
         # Remove lines before the version header (simplifies range below)
         sed -i '.bak' -n "/^${version_header}$/,\$p" "$temporary_changelog"
-    else
-        # Extract the latest version
-        version_header="$(grep --extended-regexp "^## ${CALVER_FULL_REGEX}$" "$temporary_changelog" | head -1)"
-        version=$(echo "${version_header}" | sed -E 's/^## (.*)$/\1/')
-    fi
 
-    previous_version_header="$(grep --extended-regexp "^## ${CALVER_FULL_REGEX}$" "$temporary_changelog" | head -2 | tail -1)"
+        previous_version_header="$(grep --extended-regexp "^## ${CALVER_FULL_REGEX}$" "$temporary_changelog" | head -2 | tail -1)"
 
-    # Create a URL that directs to the header of the version in the CHANGELOG
-    anchor="$(echo "$version_header" | tr -d "[:blank:]" | tr -d '.#')"
-    changelog_uri="https://github.com/${PLACEOS_RELEASE_REPO}/blob/${RELEASE_BRANCH}/CHANGELOG.md#${anchor}"
+        # Create a URL that directs to the header of the version in the CHANGELOG
+        anchor="$(echo "$version_header" | tr -d "[:blank:]" | tr -d '.#')"
+        changelog_uri="https://github.com/${PLACEOS_RELEASE_REPO}/blob/${PLACEOS_RELEASE_BRANCH}/CHANGELOG.md#${anchor}"
 
-    prompt "${green}Changelog for $version${reset}"
-    echo ""
-    echo "For the full PlaceOS release notes, see ${changelog_uri}"
-    sed -E "/^$version_header/,/^$previous_version_header$/!d;//d" "$temporary_changelog"
+        if [[ $full_changelog == "true" ]]; then
+            full_prefix="Full "
+            output="$(cat "$temporary_changelog")"
+        else
+            full_prefix=""
+            output="$(sed -n "/^$previous_version_header/q;p" "$temporary_changelog")"
+        fi
+
+        echo "# Changelog"
+        echo -e "\nFor the full PlaceOS release notes, see ${changelog_uri}\n"
+        echo "$output"
 )
+
+# Update
+###################################################################################################
 
 update_environment__usage() (
     cat <<EOF
-Usage: ./placeos update [-h|--help] [VERSION]
+Usage: placeos update [-h|--help] [VERSION]
 
 Modifies PLACEOS_TAG to the selected PlaceOS platform version.
 If VERSION is omitted, defaults to the most recent stable version.
@@ -584,7 +637,7 @@ fetch_environment_tags() (
 
 upgrade_environment__usage() (
     cat <<EOF
-Usage: ./placeos upgrade [-h|--help] [VERSION]
+Usage: placeos upgrade [-h|--help] [VERSION]
 
 Upgrades the ${PLACEOS_PRODUCT}.
 If VERSION is omitted, defaults to the latest version.
@@ -751,7 +804,7 @@ uninstall_environment() (
 
 usage() (
     cat <<EOF
-Usage: ./placeos [-h|--help] [command]
+Usage: placeos [-h|--help] [command]
 
 Helper script for interfacing with the ${PLACEOS_PRODUCT}.
 
@@ -759,6 +812,7 @@ Command:
     start                   Start the environment.
     stop                    Stops the environment.
     task                    Runs a task in the environment.
+    changelog               Displays platform changelog (in markdown).
     update                  Update the platform version.
     upgrade                 Upgrade the ${PLACEOS_PRODUCT}.
     uninstall               Uninstalls the ${PLACEOS_PRODUCT}.
@@ -783,6 +837,12 @@ start)
 stop)
     stop_environment "$@"
     ;;
+task)
+    task "$@"
+    ;;
+changelog)
+    changelog "$@"
+    ;;
 update)
     update_environment "$@"
     ;;
@@ -791,9 +851,6 @@ upgrade)
     ;;
 uninstall)
     uninstall_environment "$@"
-    ;;
-task)
-    task "$@"
     ;;
 -h | --help | help)
     usage
