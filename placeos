@@ -1,6 +1,18 @@
 #! /usr/bin/env bash
 # shellcheck disable=1003,1090
 
+# The bash hail mary (exit on failure, unset variables, fail pipe composition early)
+set -euo pipefail
+
+# Kill child processes on signals
+trap 'tput cnorm; pkill -P $$;' SIGINT SIGTERM
+
+# Name of the environment
+PLACEOS_PRODUCT="PlaceOS Partner Environment"
+
+# Whether to write to STDOUT or not
+VERBOSE="${VERBOSE:-"false"}"
+
 banner() (
     echo
     echo '░░░░░░░\  ░░\                                ░░░░░░\   ░░░░░░\'
@@ -31,16 +43,16 @@ load_environment() {
     if [[ $PLACEOS_TAG =~ ^placeos-[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
 
         if [[ $PLACEOS_TAG < "placeos-1.2108.2" ]]; then
-            PLACE_STAFF_API_TAG="nightly"
-            PLACE_NGINX_TAG="staff-api"
+            export PLACE_STAFF_API_TAG="nightly"
+            export PLACE_NGINX_TAG="staff-api"
         fi
 
         if [[ $PLACEOS_TAG < "placeos-1.2109.0" ]]; then
-            PLACE_FRONTEND_LOADER_IMAGE="frontends"
+            export PLACE_FRONTEND_LOADER_IMAGE="frontends"
         fi
 
         if [[ $PLACEOS_TAG < "placeos-1.2111.0" ]]; then
-            PLACE_SEARCH_INGEST_IMAGE="rubber-soul"
+            export PLACE_SEARCH_INGEST_IMAGE="rubber-soul"
         fi
     fi
 
@@ -50,22 +62,8 @@ load_environment() {
     unset ext_env
 }
 
-# The bash hail mary (exit on failure, unset variables, fail pipe composition early)
-set -euo pipefail
-
-# Kill child processes on signals
-trap 'tput cnorm; pkill -P $$;' SIGINT SIGTERM
-
-# Colours
-red='\033[0;31m'
-green='\033[0;32m'
-reset='\033[0m'
-
-# Whether to write to STDOUT or not
-VERBOSE="false"
-
 # Path of directory containing the script
-base_path="$(dirname "${0}")"
+base_path="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
 
 # Terminal spinner
 source "${base_path}/scripts/spinner.sh"
@@ -74,12 +72,20 @@ source "${base_path}/scripts/spinner.sh"
 mkdir -p "${base_path}/.logs"
 logfile="${base_path}/.logs/$(date +"%Y%m%d%H%M").log"
 
-COMPOSE_PROJECT_NAME=placeos
+export COMPOSE_PROJECT_NAME=placeos
 
 # Helpers
 ###################################################################################################
 
 PROMPT="░░░"
+
+# Colours
+red='\033[0;31m'
+green='\033[0;32m'
+yellow='\033[0;33m'
+reset='\033[0m'
+bold='\033[1m'
+normal='\033[22m'
 
 unknown_argument() (
     unknown_arg="${1}"
@@ -138,16 +144,17 @@ hard_reset() (
         "Failed to drop Elasticsearch indices."
 
     run_or_abort \
-        'docker-compose restart nginx' \
+        "docker-compose --project-directory='${base_path}' restart nginx" \
         "Restarting nginx..." \
-        "Failed to restart nginx."
+        "Failed to restart nginx." \
+        "true"
 )
 
 start_environment__usage() (
     cat <<EOF
 Usage: ./placeos start [-h|--help]
 
-Start the PlaceOS environment.
+Start the ${PLACEOS_PRODUCT}.
 
 Arguments:
     --hard-reset            Reset the environment to a default state.
@@ -176,7 +183,7 @@ start_environment() (
         shift
         case ${command} in
         --hard-reset)
-            read -rp "${PROMPT} $(echo -e "${red}Warning:${reset}") This will reset your environment. Would you like to continue (y/n)? " choice
+            read -rp "${PROMPT} $(echo -e "${yellow}Warning:${reset}") This will reset your environment. Would you like to continue (y/n)? " choice
             case "${choice}" in
             y | Y | YES | yes)
                 hard_reset=true
@@ -199,7 +206,7 @@ start_environment() (
             shift
             ;;
         --application)
-            application_arguement="${1}"
+            application_argument="${1}"
             shift
             ;;
         --analytics)
@@ -225,9 +232,12 @@ start_environment() (
 
     load_environment
 
-    prompt "Starting PlaceOS <${PLACEOS_TAG}>"
+    prompt "Starting $PLACEOS_PRODUCT <${PLACEOS_TAG}>"
 
-    [ $VERBOSE == "false" ] && prompt "For detailed logging, run \`tail -f ${logfile}\`"
+    if [[ $VERBOSE == "false" ]]; then
+        prompt "For detailed logging, run..."
+        prompt "${bold}tail -f ${logfile}${normal}"
+    fi
 
     EMAIL_ENV="${base_path}/.env.email"
 
@@ -247,11 +257,11 @@ start_environment() (
     fi
 
     if [ -n "${domain_argument}" ]; then
-        PLACE_DOMAIN=${domain_argument}
+        export PLACE_DOMAIN=${domain_argument}
     fi
 
     if [ -n "${application_argument}" ]; then
-        PLACE_APPLICATION=${application_argument}
+        export PLACE_APPLICATION=${application_argument}
     fi
 
     # Attempt to set the username to that in git config if username not in env
@@ -308,12 +318,19 @@ start_environment() (
         "Failed to generate secrets."
 
     run_or_abort \
-        "docker-compose ${PROFILES} pull -q" \
+        "docker-compose --project-directory='${base_path}' ${PROFILES} pull -q" \
         "Pulling images..." \
         "Failed to pull images."
 
+    [ ${hard_reset} == "true" ] && hard_reset
+
     run_or_abort \
-        "docker-compose ${PROFILES} up -d" \
+        "${base_path}/scripts/run-init-container" \
+        "Initialising $PLACEOS_PRODUCT with default domain ($PLACE_DOMAIN)..." \
+        "Failed to create user entity."
+
+    run_or_abort \
+        "docker-compose --project-directory='${base_path}' ${PROFILES} up -d" \
         "Bringing up services..." \
         "Failed to start services."
 
@@ -324,15 +341,9 @@ start_environment() (
             "Failed to configure InfluxDB."
     fi
 
-    [ ${hard_reset} == "true" ] && hard_reset
-
-    run_or_abort \
-        "${base_path}/scripts/run-init-container" \
-        "Initialising PlaceOS with default domain ($PLACE_DOMAIN)..." \
-        "Failed to create user entity."
-
-    prompt "PlaceOS initialised. Login to https://$PLACE_DOMAIN/backoffice/ with..."
-    prompt "$PLACE_EMAIL:$PLACE_PASSWORD"
+    prompt "${green}$PLACEOS_PRODUCT initialised!${reset}"
+    prompt "Login to https://$PLACE_DOMAIN/backoffice/ with..."
+    prompt "${yellow}$PLACE_EMAIL${reset}:${yellow}$PLACE_PASSWORD${reset}"
 )
 
 # Stop
@@ -342,7 +353,7 @@ stop_environment__usage() (
     cat <<EOF
 Usage: ./placeos stop [-h|--help]
 
-Stop the PlaceOS environment.
+Stop the ${PLACEOS_PRODUCT}.
 
 Arguments:
     -v, --verbose           Write logs to STDOUT in addition to the log file.
@@ -369,9 +380,9 @@ stop_environment() (
     done
 
     run_or_abort \
-        "docker-compose down --remove-orphans" \
-        "Tearing down PlaceOS" \
-        "Failed to teardown PlaceOS"
+        "docker-compose --project-directory='${base_path}' down --remove-orphans" \
+        "Tearing down $PLACEOS_PRODUCT" \
+        "Failed to teardown $PLACEOS_PRODUCT"
 )
 
 # Task
@@ -381,7 +392,7 @@ task__usage() (
     cat <<EOF
 Usage: ./placeos task [-h|--help|help] [-t|--task] <task> [help|...] [arguments...]
 
-Run a task in the PlaceOS environment.
+Run a task in the ${PLACEOS_PRODUCT}.
 
 Arguments:
     -h, --help              Display this message.
@@ -418,6 +429,7 @@ task() (
         exit 0
     fi
 
+    # shellcheck disable=2086
     ./scripts/run-sam-task ${PARAMS}
 )
 
@@ -492,6 +504,7 @@ If VERSION is omitted, defaults to the most recent stable version.
 
 Arguments:
     --list                  List the available versions.
+    --restart               Restart services after updating, loading the new version.
     -v, --verbose           Write logs to STDOUT in addition to the log file.
     -h, --help              Display this message.
 EOF
@@ -499,6 +512,7 @@ EOF
 
 update_environment() (
     version=""
+    restart_services="false"
     while [ ${#} -gt 0 ]; do
         command="${1}"
         shift
@@ -510,6 +524,9 @@ update_environment() (
         --list)
             fetch_release_tags
             exit 0
+            ;;
+        --restart)
+            restart_services="true"
             ;;
         -v | --verbose)
             VERBOSE="true"
@@ -528,11 +545,11 @@ update_environment() (
     tags=$(fetch_release_tags)
 
     if [[ -z "$version" ]]; then
-        version=$(echo "$tags" | grep -Ev "$VERSION_CHANNEL_REGEX" | head -1)
+        version=$(grep -v --extended-regexp "$VERSION_CHANNEL_REGEX" <<<"${tags}" | head -1)
     fi
 
     # shellcheck disable=2076
-    if [[ -z "$(grep -E "$CALVER_FULL_REGEX|$CALVER_MONTH_REGEX|$VERSION_CHANNEL_REGEX" <<< $version)" ]]; then
+    if ! grep -q --extended-regexp "$CALVER_FULL_REGEX|$CALVER_MONTH_REGEX|$VERSION_CHANNEL_REGEX" <<<"$version"; then
         prompt "Valid versions are...\n\n$tags\n"
         abort "${version} is not a valid version."
     fi
@@ -542,18 +559,25 @@ update_environment() (
         "Updating to ${version}" \
         "Failed to update to ${version}"
 
-    changelog ${version}
+    if [[ $restart_services == "true" ]]; then
+        run_or_abort \
+            "docker-compose --project-directory='${base_path}' restart" \
+            "Restarting services on ${version}..." \
+            "Failed to restart services"
+    fi
+
+    changelog "${version}"
 )
 
 # Upgrade
 ###################################################################################################
 
-PARTNER_ENV_REPO="place-labs/partner-environment"
+PARTNER_ENV_REPO="placeos/partner-environment"
 
 fetch_environment_tags() (
     git ls-remote https://github.com/${PARTNER_ENV_REPO} |
         cut -f2 |
-        grep -E '^refs/tags/|HEAD' |
+        grep --extended-regexp '^refs/tags/|HEAD' |
         cut -d'/' -f3 |
         sort --version-sort --reverse
 )
@@ -562,19 +586,20 @@ upgrade_environment__usage() (
     cat <<EOF
 Usage: ./placeos upgrade [-h|--help] [VERSION]
 
-Upgrades the PlaceOS Partner Environment.
+Upgrades the ${PLACEOS_PRODUCT}.
 If VERSION is omitted, defaults to the latest version.
 
 Arguments:
-    --list                  Lists versions of the Partner Environment.
-    -v, --verbose           Write logs to STDOUT in addition to the log file.
+    --list                  Lists versions of the ${PLACEOS_PRODUCT}.
+    -q, --quiet             Do not write command logs to STDOUT.
     -h, --help              Display this message.
 EOF
 )
 
 upgrade_environment() (
-    version=""
+    version="HEAD"
     tags="$(fetch_environment_tags)"
+    VERBOSE="true"
 
     while [ ${#} -gt 0 ]; do
         command="${1}"
@@ -588,8 +613,8 @@ upgrade_environment() (
             echo "$tags"
             exit 0
             ;;
-        -v | --verbose)
-            VERBOSE="true"
+        -q | --quiet)
+            VERBOSE="false"
             ;;
         -*)
             unknown_argument "${command}" "upgrade_environment__usage"
@@ -603,7 +628,7 @@ upgrade_environment() (
     done
 
     # shellcheck disable=2076
-    if [[ ! " $tags " =~ " $version " ]]; then
+    if [[ ! " $tags " =~ "$version" ]]; then
         prompt "Valid versions are...\n\n$tags\n"
         abort "$version is not a valid version."
     fi
@@ -620,17 +645,105 @@ upgrade_environment() (
 
     last_commit=$(git rev-parse "$version")
 
-    run_or_abort \
-        "git pull --autostash --quiet --rebase origin $version" \
-        "Upgrading PlaceOS Partner Environment..." \
-        "Failed to upgrade PlaceOS Partner Environment"
+    if ! git diff --quiet; then
+        (
+          git stash --include-untracked \
+            && git checkout --quiet "$version" \
+            && git stash apply
+        ) || abort "Failed to upgrade, you may need to resolve merge conflicts"
+    else
+        run_or_abort \
+            "git checkout --quiet $version" \
+            "Upgrading ${PLACEOS_PRODUCT}..." \
+            "Failed to upgrade ${PLACEOS_PRODUCT}"
+    fi
 
     # Check if it was really updated or not
     if [[ "$(git rev-parse HEAD)" = "$last_commit" ]]; then
-        prompt "PlaceOS Partner Environment is already at $version"
+        prompt "${PLACEOS_PRODUCT} is already at $version"
     else
-        prompt "PlaceOS Partner Environment is now at $version"
+        prompt "${PLACEOS_PRODUCT} is now at $version"
     fi
+)
+
+# Uninstall
+###################################################################################################
+
+uninstall_environment__usage() (
+    cat <<EOF
+Usage: placeos uninstall
+
+Removes $PLACEOS_PRODUCT containers, removes scripts from paths, and finally deletes the installation path.
+
+Arguments:
+    --force                 Skip confirmation of uninstall.
+    -h, --help              Display this message.
+EOF
+)
+
+uninstall_environment() (
+    force="false"
+    VERBOSE="true"
+
+    while [ ${#} -gt 0 ]; do
+        command="${1}"
+        shift
+        case ${command} in
+        -h | --help | help)
+            uninstall_environment__usage
+            exit 0
+            ;;
+        --force)
+            force="true"
+            ;;
+        *)
+            unknown_argument "${command}" "uninstall_environment__usage"
+            ;;
+        esac
+    done
+
+    # Get confirmation.
+
+    if [ "${force}" == "false" ]; then
+        read -rp "${PROMPT} $(echo -e "${yellow}Warning:${reset}") This will remove your $PLACEOS_PRODUCT installation. Would you like to continue (y/n)? " choice
+        case "${choice}" in
+        y | Y | YES | yes) ;;
+
+        *)
+            abort "Exiting."
+            ;;
+        esac
+    fi
+
+    # Stop environment and remove containers, volumes, and images.
+    run_or_abort \
+        "docker-compose --project-directory='${base_path}' down --volumes --networks --rmi all" \
+        "Stopping ${PLACEOS_PRODUCT}..." \
+        "Failed to stop ${PLACEOS_PRODUCT}"
+
+    PROFILE_PATH="${PROFILE_PATH:-"${HOME}/.profile"}"
+
+    # Remove scripts from paths.
+    run_or_abort \
+        "sed -i '.bak' -E 's/^.*# added by PlaceOS installer$//g' \"${PROFILE_PATH}\"" \
+        "Removing $PLACEOS_PRODUCT from ${bold}${PROFILE_PATH}${normal}..." \
+        "Failed to remove $PLACEOS_PRODUCT from ${bold}${PROFILE_PATH}${normal}"
+
+    # Delete the installation path.
+    PLACEOS_HOME="${PLACEOS_HOME:-"$HOME/.placeos"}"
+    if [ "${force}" == "false" ]; then
+        read -rp "${PROMPT} $(echo -e "${yellow}Warning:${reset}") Removing ${bold}${PLACEOS_HOME}${normal}. Would you like to continue (y/n)? " choice
+        case "${choice}" in
+        y | Y | YES | yes) ;;
+
+        *)
+            abort "Exiting."
+            ;;
+        esac
+    fi
+    rm -rf "$PLACEOS_HOME"
+
+    prompt "${green}Uninstalled $PLACEOS_PRODUCT${reset}"
 )
 
 # Root Command
@@ -640,14 +753,15 @@ usage() (
     cat <<EOF
 Usage: ./placeos [-h|--help] [command]
 
-Helper script for interfacing with the PlaceOS Partner Environment.
+Helper script for interfacing with the ${PLACEOS_PRODUCT}.
 
 Command:
     start                   Start the environment.
     stop                    Stops the environment.
-    update                  Update the platform version.
-    upgrade                 Upgrade the Partner Environment.
     task                    Runs a task in the environment.
+    update                  Update the platform version.
+    upgrade                 Upgrade the ${PLACEOS_PRODUCT}.
+    uninstall               Uninstalls the ${PLACEOS_PRODUCT}.
     help                    Display this message.
 
 Arguments:
@@ -674,6 +788,9 @@ update)
     ;;
 upgrade)
     upgrade_environment "$@"
+    ;;
+uninstall)
+    uninstall_environment "$@"
     ;;
 task)
     task "$@"

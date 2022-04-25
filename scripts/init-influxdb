@@ -9,6 +9,7 @@ influx_key_env=".env.influxdb"
 set -a
 # Attempt to source the InfluxDB API key
 if [ -f ${influx_key_env} ]; then
+    # shellcheck disable=1090
     . ${influx_key_env}
 fi
 set +a
@@ -23,10 +24,10 @@ echo "░░░ Initialising InfluxDB API"
 # Wait for the service to be available
 wait=0
 max_wait=60
-until [ $wait -eq $max_wait ] || docker exec $instance influx ping >/dev/null; do
+until [[ $wait == "$max_wait" ]] || docker exec "$instance" influx ping >/dev/null; do
     sleep $((wait++))
 done
-if [ $wait -eq $max_wait ]; then
+if [[ $wait == "$max_wait" ]]; then
     echo "░░░ Timeout waiting for InfluxDB to be ready"
     exit 1
 fi

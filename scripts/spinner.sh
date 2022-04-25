@@ -1,4 +1,6 @@
 #! /usr/bin/env bash
+# shellcheck disable=1000-9999
+#
 # MIT License
 # Copyright (c) 2021 Tasos Latsas
 #

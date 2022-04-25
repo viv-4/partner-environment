@@ -3,9 +3,38 @@ on:
   push:
   schedule:
     - cron: "0 15 * * 1-5"
+
 jobs:
-  test:
-    name: "${{ !matrix.stable && '🚧 ' || '' }}version: ${{ matrix.version != '' && matrix.version || 'empty'}}, os: ${{ matrix.os }}"
+  test-install:
+    name: "Install ${{ !matrix.stable && '🚧 ' || '' }}- os: ${{ matrix.os }}"
+    runs-on: ${{ matrix.os }}
+    continue-on-error: ${{ !matrix.stable }}
+    strategy:
+      fail-fast: false
+      matrix:
+        stable: [true]
+        os:
+          - ubuntu-18.04
+          - ubuntu-20.04
+    steps:
+      -
+        name: Install PlaceOS
+        shell: bash
+        run: |
+          PLACEOS_PRODUCT_BRANCH="${GITHUB_REF#refs/heads/}" \
+          bash -c "$(
+            curl --proto '=https' --tlsv1.2 -sSfL \
+            https://raw.githubusercontent.com/PlaceOS/partner-environment/${{ github.sha }}/scripts/install
+          )"
+        env:
+          TERM: xterm-256color
+          VERBOSE: true
+          PLACEOS_SKIP_INSTALL_OPEN: true
+          PLACE_EMAIL: robot@place.tech
+          PLACE_PASSWORD: development
+
+  test-start:
+    name: "Start ${{ !matrix.stable && '🚧 ' || '' }}- version: ${{ matrix.version != '' && matrix.version || 'empty'}}, os: ${{ matrix.os }}"
     runs-on: ${{ matrix.os }}
     continue-on-error: ${{ !matrix.stable }}
     strategy:
@@ -30,8 +59,9 @@ jobs:
             stable: false
             os: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Test initialization
+        if: ${{ matrix.version != '' }} # Testing a set tag
         run: ./placeos start --verbose
         env:
           PLACEOS_TAG: ${{ matrix.version }}

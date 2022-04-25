@@ -1,74 +1,116 @@
-<p align="center">
-  <img src="https://github.com/placeos.png?size=200" alt="PlaceOS" />
-</p>
+<img align="right" src="https://github.com/placeos.png?size=200" alt="PlaceOS" />
 
-# Partner Environment
+# PlaceOS Partner Environment
 
-[![CI](https://github.com/place-labs/partner-environment/actions/workflows/ci.yml/badge.svg)](https://github.com/place-labs/partner-environment/actions/workflows/ci.yml)
+[![CI](https://github.com/PlaceOS/partner-environment/actions/workflows/ci.yml/badge.svg)](https://github.com/PlaceOS/partner-environment/actions/workflows/ci.yml)
 
-For use when testing, improving or experimenting with PlaceOS on a local machine.
-Use it for driver, frontend, api and infra development. Treat it as insecure.
+For use when testing, improving or experimenting with PlaceOS on a local machine.  
+Use it for driver, frontend, api and infrastructure development.
 
-When finished dev work for the day, stop the containers with `./placeos stop`
+**Treat it as insecure** as it is *NOT* intended for production use...
 
-*NOT* for production use.
+## Table of Contents
+
+<!-- Generated with `mdtoc --inplace` -->
+<!-- See https://github.com/kubernetes-sigs/mdtoc -->
+<!-- toc -->
+- [PlaceOS Partner Environment](#placeos-partner-environment)
+  - [Table of Contents](#table-of-contents)
+  - [Drivers](#drivers)
+  - [Installation](#installation)
+    - [Dependencies](#dependencies)
+      - [Optional tools](#optional-tools)
+    - [MacOS](#macos)
+  - [Configuration](#configuration)
+  - [Usage](#usage)
+    - [`$ placeos`](#-placeos)
+    - [`$ placeos start`](#-placeos-start)
+    - [`$ placeos stop`](#-placeos-stop)
+    - [`$ placeos task`](#-placeos-task)
+    - [`$ placeos update`](#-placeos-update)
+    - [`$ placeos upgrade`](#-placeos-upgrade)
+    - [`$ placeos uninstall`](#-placeos-uninstall)
+  - [Service Graph](#service-graph)
+<!-- /toc -->
+
+## Drivers
+
+See the [PlaceOS Drivers repository](https://github.com/PlaceOS/drivers) for further information.
 
 ## Installation
 
-1. `$ ./placeos start`
-1. Navigate to https://localhost:8443/backoffice
-1. Login with the credentials output by the CLI
+- Via `curl`:
+  ```shell-session
+  curl \
+    --proto '=https' --tlsv1.2 \ # Enforce strict HTTPS
+    --location \                 # Follow redirects
+    --show-error --silent \      # Show an error message on failure
+    --fail \                     # Fail on HTTP errors
+    https://raw.githubusercontent.com/PlaceOS/partner-environment/master/scripts/install | bash
+  ```
+
+  In other words...
+
+  ```shell-session
+  curl --proto '=https' --tlsv1.2 -LsSf https://raw.githubusercontent.com/PlaceOS/partner-environment/master/scripts/install | bash
+  ```
+
+- Via `wget`:
+  ```shell-session
+  wget -O - https://raw.githubusercontent.com/PlaceOS/partner-environment/master/scripts/install | bash
+  ```
+
+### Dependencies
+
+These will need to be installed prior to installation:
+
+- [bash >= 4.4.20](https://www.gnu.org/software/bash)
+- [docker >= 18.06.0](https://docs.docker.com/engine/install)
+- [git >= 2.27.0](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
+
+#### Optional tools
+
+- [lazydocker](https://github.com/jesseduffield/lazydocker) for easy docker monitoring.
+- [docker completion](https://docs.docker.com/compose/completion/) for more efficient terminal use.
 
 ### MacOS
 
 If using [Docker Desktop for Mac](https://docs.docker.com/desktop/mac/install/), the default memory allocation of 2GB is insufficient for
-running elasticsearch in addition to the set of PlaceOS services.
+running Elasticsearch in addition to the set of PlaceOS services.
 Bumping the resource limit to 4GB should be sufficient.
 
 ## Configuration
 
-- `PLACE_EMAIL`,`PLACE_PASSWORD`: Create an initial admin user via these environment variables
+- `PLACE_EMAIL`, `PLACE_PASSWORD`: Create an initial admin user via these environment variables
 - `PLACE_DOMAIN`: Set an alternate application domain, defaults to `localhost:8443`
 
 These environment variables can also be passed via the cli.
 
-## Dependencies
-
-These will need to be installed prior to running `./placeos start`:
-
-- [docker](https://www.docker.com/)
-- [docker-compose](https://github.com/docker/compose)
-- [git](https://git-scm.com/)
-
-### Optional tools
-
-- [watchexec](https://github.com/watchexec/watchexec) to run watch scripts (see `scripts/watch-crystal`)
-- [lazydocker](https://github.com/jesseduffield/lazydocker) for easy docker monitoring
-- [docker completion](https://docs.docker.com/compose/completion/) for more efficient terminal use
-
 ## Usage
 
-1. Clone the environment: https://github.com/place-labs/partner-environment.git
-1. Run the install script: `./placeos start` (use this tool to update PlaceOS Version)
+When finished, stop the environment's containers with `placeos stop`.
+
+### `$ placeos`
 
 ```shell-session
-Usage: ./placeos [-h|--help] [command]
+Usage: placeos [-h|--help] [command]
 
 Helper script for interfacing with the PlaceOS Partner Environment.
 
 Command:
     start                   Start the environment.
     stop                    Stops the environment.
+    task                    Runs a task in the environment.
     update                  Update the platform version.
     upgrade                 Upgrade the Partner Environment.
-    task                    Runs a task in the environment.
+    uninstall               Uninstalls the Partner Environment.
     help                    Display this message.
 ```
 
-### `$ ./placeos start`
+### `$ placeos start`
 
 ```shell-session
-Usage: ./placeos start [-h|--help]
+Usage: placeos start [-h|--help] [flags...]
 
 Start the PlaceOS environment.
 
@@ -82,10 +124,10 @@ Arguments:
     -h, --help              Display this message
 ```
 
-### `$ ./placeos stop`
+### `$ placeos stop`
 
 ```shell-session
-Usage: ./placeos stop [-h|--help]
+Usage: placeos stop [-h|--help]
 
 Stop the PlaceOS environment.
 
@@ -94,10 +136,22 @@ Arguments:
     -h, --help              Display this message.
 ```
 
-### `./placeos update`
+### `$ placeos task`
+
+```shell-session
+Usage: placeos task [-h|--help|help] [-t|--task] <task> [help|...] [arguments...]
+
+Run a task in the PlaceOS environment.
+
+Arguments:
+    -t, ---tasks            Display list of available tasks.
+    -h, --help              Display this message.
+```
+
+### `$ placeos update`
 
 ```
-Usage: ./placeos update [-h|--help] [VERSION]
+Usage: placeos update [-h|--help] [flags...] [VERSION]
 
 Modifies PLACEOS_TAG to the selected PlaceOS platform version.
 If VERSION is omitted, defaults to the most recent stable version.
@@ -108,35 +162,31 @@ Arguments:
     -h, --help              Display this message.
 ```
 
-### `./placeos upgrade`
+### `$ placeos upgrade`
 
 ```
-Usage: ./placeos upgrade [-h|--help] [VERSION]
+Usage: placeos upgrade [-h|--help] [flags...] [VERSION]
 
 Upgrades the PlaceOS Partner Environment.
 If VERSION is omitted, defaults to the most recent stable version.
 
 Arguments:
     --list                  Lists versions of the Partner Environment.
-    -v, --verbose           Write logs to STDOUT in addition to the log file.
+    -q, --quiet             Do not write command logs to STDOUT.
     -h, --help              Display this message.
 ```
 
-### `$ ./placeos task`
+### `$ placeos uninstall`
 
 ```shell-session
-Usage: ./placeos task [-h|--help|help] [-t|--task] <task> [help|...] [arguments...]
+Usage: placeos uninstall [-h|--help] [--force]
 
-Run a task in the PlaceOS environment.
+Removes PlaceOS containers, removes scripts from paths, and finally deletes the installation path.
 
 Arguments:
+    --force                 Skip confirmation of uninstall.
     -h, --help              Display this message.
-    -t, ---tasks            Display list of available tasks.
 ```
-
-## Drivers
-
-See the [PlaceOS Drivers repository](https://github.com/PlaceOS/drivers) for further information.
 
 ## Service Graph
 
