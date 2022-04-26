@@ -799,12 +799,20 @@ uninstall_environment() (
     prompt "${green}Uninstalled $PLACEOS_PRODUCT${reset}"
 )
 
+# Version
+###################################################################################################
+
+version() (
+    load_environment
+    echo "${PLACEOS_TAG}"
+)
+
 # Root Command
 ###################################################################################################
 
 usage() (
     cat <<EOF
-Usage: placeos [-h|--help] [command]
+Usage: placeos [-h|--help] [--version] [command]
 
 Helper script for interfacing with the ${PLACEOS_PRODUCT}.
 
@@ -816,9 +824,11 @@ Command:
     update                  Update the platform version.
     upgrade                 Upgrade the ${PLACEOS_PRODUCT}.
     uninstall               Uninstalls the ${PLACEOS_PRODUCT}.
+    version                 Render PlaceOS version in use.
     help                    Display this message.
 
 Arguments:
+    --version               Render PlaceOS version in use.
     -h, --help              Display this message.
 EOF
 )
@@ -851,6 +861,9 @@ upgrade)
     ;;
 uninstall)
     uninstall_environment "$@"
+    ;;
+--version | version)
+    version
     ;;
 -h | --help | help)
     usage
