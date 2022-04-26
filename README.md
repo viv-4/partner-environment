@@ -146,12 +146,12 @@ Arguments:
 ### `$ placeos task`
 
 ```shell-session
-Usage: placeos task [-h|--help|help] [-t|--task] <task> [help|...] [arguments...]
+Usage: placeos task [-h|--help|help] [--list] <task> [help|...] [arguments...]
 
 Run a task in the PlaceOS environment.
 
 Arguments:
-    -t, ---tasks            Display list of available tasks.
+    --list                  Display list of available tasks.
     -h, --help              Display this message.
 ```
 

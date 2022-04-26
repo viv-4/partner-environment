@@ -410,13 +410,13 @@ stop_environment() (
 
 task__usage() (
     cat <<EOF
-Usage: placeos task [-h|--help|help] [-t|--task] <task> [help|...] [arguments...]
+Usage: placeos task [-h|--help|help] [--list] <task> [help|...] [arguments...]
 
 Run a task in the ${PLACEOS_PRODUCT}.
 
 Arguments:
+    --list                  Display list of available tasks.
     -h, --help              Display this message.
-    -t, ---tasks            Display list of available tasks.
 EOF
 )
 
@@ -432,7 +432,7 @@ task() (
             task__usage
             exit 0
             ;;
-        -t | --tasks)
+        -t | --tasks | --list)
             ./scripts/run-sam-task help
             exit 0
             ;;
