@@ -1,8 +1,8 @@
-# PlaceOS Partner Environment
+# PlaceOS Local
 
 <img align="right" src="https://github.com/placeos.png?size=200" alt="PlaceOS" />
 
-[![CI](https://github.com/PlaceOS/partner-environment/actions/workflows/ci.yml/badge.svg)](https://github.com/PlaceOS/partner-environment/actions/workflows/ci.yml)
+[![CI](https://github.com/PlaceOS/local/actions/workflows/ci.yml/badge.svg)](https://github.com/PlaceOS/local/actions/workflows/ci.yml)
 
 For use when testing, improving or experimenting with PlaceOS on a local machine.  
 Use it for driver, frontend, api and infrastructure development.
@@ -14,7 +14,7 @@ Use it for driver, frontend, api and infrastructure development.
 <!-- Generated with `mdtoc --inplace` -->
 <!-- See https://github.com/kubernetes-sigs/mdtoc -->
 <!-- toc -->
-- [PlaceOS Partner Environment](#placeos-partner-environment)
+- [PlaceOS Local](#placeos-local)
   - [Table of Contents](#table-of-contents)
   - [Drivers](#drivers)
   - [Installation](#installation)
@@ -47,18 +47,18 @@ See the [PlaceOS Drivers repository](https://github.com/PlaceOS/drivers) for fur
     --location \                 # Follow redirects
     --show-error --silent \      # Show an error message on failure
     --fail \                     # Fail on HTTP errors
-    https://raw.githubusercontent.com/PlaceOS/partner-environment/master/scripts/install | bash
+    https://raw.githubusercontent.com/PlaceOS/local/master/scripts/install | bash
   ```
 
   In other words...
 
   ```shell-session
-  curl --proto '=https' --tlsv1.2 -LsSf https://raw.githubusercontent.com/PlaceOS/partner-environment/master/scripts/install | bash
+  curl --proto '=https' --tlsv1.2 -LsSf https://raw.githubusercontent.com/PlaceOS/local/master/scripts/install | bash
   ```
 
 - Via `wget`:
   ```shell-session
-  wget -O - https://raw.githubusercontent.com/PlaceOS/partner-environment/master/scripts/install | bash
+  wget -O - https://raw.githubusercontent.com/PlaceOS/local/master/scripts/install | bash
   ```
 
 ### Dependencies
@@ -96,7 +96,7 @@ When finished, stop the environment's containers with `placeos stop`.
 ```shell-session
 Usage: placeos [-h|--help] [--version] [command]
 
-Helper script for interfacing with the PlaceOS Partner Environment.
+Helper script for interfacing with PlaceOS Local.
 
 Command:
     start                   Start the environment.
@@ -104,8 +104,8 @@ Command:
     task                    Runs a task in the environment.
     changelog               Displays platform changelog (in markdown).
     update                  Update the platform version.
-    upgrade                 Upgrade the Partner Environment.
-    uninstall               Uninstalls the Partner Environment.
+    upgrade                 Upgrade PlaceOS Local.
+    uninstall               Uninstalls PlaceOS Local.
     version                 Render PlaceOS version in use.
     help                    Display this message.
 
@@ -119,7 +119,7 @@ Arguments:
 ```shell-session
 Usage: placeos start [-h|--help] [flags...]
 
-Start the PlaceOS environment.
+Start the PlaceOS Local environment.
 
 Arguments:
     --email EMAIL           Email to setup an admin account for. [default: support@place.tech]
@@ -136,7 +136,7 @@ Arguments:
 ```shell-session
 Usage: placeos stop [-h|--help]
 
-Stop the PlaceOS environment.
+Stop the PlaceOS Local environment.
 
 Arguments:
     -v, --verbose           Write logs to STDOUT in addition to the log file.
@@ -148,7 +148,7 @@ Arguments:
 ```shell-session
 Usage: placeos task [-h|--help|help] [--list] <task> [help|...] [arguments...]
 
-Run a task in the PlaceOS environment.
+Run a task in the PlaceOS Local environment.
 
 Arguments:
     --list                  Display list of available tasks.
@@ -188,11 +188,11 @@ Arguments:
 ```
 Usage: placeos upgrade [-h|--help] [flags...] [VERSION]
 
-Upgrades the PlaceOS Partner Environment.
+Upgrades the PlaceOS Local environment.
 If VERSION is omitted, defaults to the most recent stable version.
 
 Arguments:
-    --list                  Lists versions of the Partner Environment.
+    --list                  Lists versions of PlaceOS Local.
     -q, --quiet             Do not write command logs to STDOUT.
     -h, --help              Display this message.
 ```

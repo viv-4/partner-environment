@@ -21,9 +21,9 @@ PLACEOS_HOME=${PLACEOS_HOME:-"${HOME}${SEPARATOR}.placeos"}
 PLACEOS_SCRIPTS="${PLACEOS_HOME}${SEPARATOR}bin"
 PROFILE_PATH="${HOME}${SEPARATOR}.profile"
 
-PLACEOS_PRODUCT="PlaceOS Partner Environment"
+PLACEOS_PRODUCT="PlaceOS Local"
 PLACEOS_PRODUCT_BRANCH=${PLACEOS_PRODUCT_BRANCH:-"master"}
-PLACEOS_PRODUCT_REPO="https://github.com/PlaceOS/partner-environment"
+PLACEOS_PRODUCT_REPO="https://github.com/PlaceOS/local"
 
 # Helpers
 ###################################################################################################

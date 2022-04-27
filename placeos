@@ -8,7 +8,7 @@ set -euo pipefail
 trap 'tput cnorm; pkill -P $$;' SIGINT SIGTERM
 
 # Name of the environment
-PLACEOS_PRODUCT="PlaceOS Partner Environment"
+PLACEOS_PRODUCT="PlaceOS Local"
 
 # Whether to write to STDOUT or not
 VERBOSE="${VERBOSE:-"false"}"
@@ -174,7 +174,7 @@ start_environment__usage() (
     cat <<EOF
 Usage: placeos start [-h|--help]
 
-Start the ${PLACEOS_PRODUCT}.
+Start the ${PLACEOS_PRODUCT} environment.
 
 Arguments:
     --hard-reset            Reset the environment to a default state.
@@ -373,7 +373,7 @@ stop_environment__usage() (
     cat <<EOF
 Usage: placeos stop [-h|--help]
 
-Stop the ${PLACEOS_PRODUCT}.
+Stop the ${PLACEOS_PRODUCT} environment.
 
 Arguments:
     -v, --verbose           Write logs to STDOUT in addition to the log file.
@@ -412,7 +412,7 @@ task__usage() (
     cat <<EOF
 Usage: placeos task [-h|--help|help] [--list] <task> [help|...] [arguments...]
 
-Run a task in the ${PLACEOS_PRODUCT}.
+Run a task in the ${PLACEOS_PRODUCT} environment.
 
 Arguments:
     --list                  Display list of available tasks.
@@ -625,10 +625,10 @@ update_environment() (
 # Upgrade
 ###################################################################################################
 
-PARTNER_ENV_REPO="placeos/partner-environment"
+PLACEOS_PRODUCT_REPO="placeos/local"
 
 fetch_environment_tags() (
-    git ls-remote https://github.com/${PARTNER_ENV_REPO} |
+    git ls-remote "https://github.com/${PLACEOS_PRODUCT_REPO}" |
         cut -f2 |
         grep --extended-regexp '^refs/tags/|HEAD' |
         cut -d'/' -f3 |
@@ -639,11 +639,11 @@ upgrade_environment__usage() (
     cat <<EOF
 Usage: placeos upgrade [-h|--help] [VERSION]
 
-Upgrades the ${PLACEOS_PRODUCT}.
+Upgrades {PLACEOS_PRODUCT}.
 If VERSION is omitted, defaults to the latest version.
 
 Arguments:
-    --list                  Lists versions of the ${PLACEOS_PRODUCT}.
+    --list                  Lists versions of {PLACEOS_PRODUCT}.
     -q, --quiet             Do not write command logs to STDOUT.
     -h, --help              Display this message.
 EOF
@@ -814,7 +814,7 @@ usage() (
     cat <<EOF
 Usage: placeos [-h|--help] [--version] [command]
 
-Helper script for interfacing with the ${PLACEOS_PRODUCT}.
+Helper script for interfacing with {PLACEOS_PRODUCT}.
 
 Command:
     start                   Start the environment.
@@ -822,8 +822,8 @@ Command:
     task                    Runs a task in the environment.
     changelog               Displays platform changelog (in markdown).
     update                  Update the platform version.
-    upgrade                 Upgrade the ${PLACEOS_PRODUCT}.
-    uninstall               Uninstalls the ${PLACEOS_PRODUCT}.
+    upgrade                 Upgrade {PLACEOS_PRODUCT}.
+    uninstall               Uninstalls {PLACEOS_PRODUCT}.
     version                 Render PlaceOS version in use.
     help                    Display this message.
 
