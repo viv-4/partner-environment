@@ -4,8 +4,7 @@
 
 [![CI](https://github.com/PlaceOS/local/actions/workflows/ci.yml/badge.svg)](https://github.com/PlaceOS/local/actions/workflows/ci.yml)
 
-For use when testing, improving or experimenting with PlaceOS on a local machine.  
-Use it for driver, frontend, api and infrastructure development.
+For use when testing, improving or experimenting with PlaceOS on a local machine.
 
 **Treat it as insecure** as it is *NOT* intended for production use...
 
