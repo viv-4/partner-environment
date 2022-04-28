@@ -50,6 +50,10 @@ x-influxdb-client-env: &influxdb-client-env
   INFLUX_HOST: ${INFLUX_HOST:-http://influxdb:8086}
   INFLUX_ORG: ${INFLUX_ORG:-PlaceOS}
 
+x-opentelemetry-env: &opentelemetry-env
+  OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+  OTEL_EXPORTER_OTLP_API_KEY: ${OTEL_EXPORTER_OTLP_API_KEY:-}
+
 x-place-loader-client-env: &place-loader-client-env
   PLACE_LOADER_URI: ${PLACE_LOADER_URI:-http://frontend-loader:3000}
 
@@ -106,6 +110,7 @@ services:
       - *secret-key-env
     environment:
       <<: *deployment-env
+      <<: *opentelemetry-env
       # Service Hosts
       <<: *elastic-client-env
       <<: *etcd-client-env
@@ -127,6 +132,7 @@ services:
     env_file:
       - *secret-key-env
     environment:
+      <<: *opentelemetry-env
       <<: *rethinkdb-client-env
       <<: *redis-client-env
       COAUTH_NO_SSL: "true"
@@ -153,6 +159,7 @@ services:
         hard: 0
     environment:
       <<: *deployment-env
+      <<: *opentelemetry-env
       # Service Hosts
       <<: *etcd-client-env
       <<: *redis-client-env
@@ -188,7 +195,8 @@ services:
       - *secret-key-env
     environment:
       <<: *deployment-env
-        # Service Hosts
+      <<: *opentelemetry-env
+      # Service Hosts
       <<: *rethinkdb-client-env
       PLACE_LOADER_WWW: www
 
@@ -210,6 +218,7 @@ services:
       - *secret-key-env
     environment:
       <<: *deployment-env
+      <<: *opentelemetry-env
       # Service Hosts
       <<: *influxdb-client-env
       <<: *redis-client-env
@@ -231,6 +240,7 @@ services:
       - *secret-key-env
     environment:
       <<: *deployment-env
+      <<: *opentelemetry-env
       # Service Hosts
       <<: *etcd-client-env
       <<: *redis-client-env
@@ -273,6 +283,7 @@ services:
       - *secret-key-env
     environment:
       <<: *deployment-env
+      <<: *opentelemetry-env
       # User/Application Configuration
       PLACE_DOMAIN: ${PLACE_DOMAIN:-localhost:8443}
       PLACE_APPLICATION: ${PLACE_APPLICATION:-backoffice}
@@ -297,9 +308,8 @@ services:
       - rethink
     environment:
       <<: *deployment-env
-      # Must be specified for `>= 1.2108.0, <= 1.2109.1`
-      ES_DISABLE_BULK: "0"
-      # Service Hosts
+      <<: *opentelemetry-env
+     # Service Hosts
       <<: *rethinkdb-client-env
       <<: *elastic-client-env
 
@@ -399,7 +409,7 @@ services:
       - influxdb
     env_file:
       - *influxdb-api-key
-      - .env.chronograf  # Contains TOKEN_SECRET for OAuth integration
+      - .env.chronograf # Contains TOKEN_SECRET for OAuth integration
     environment:
       BASE_PATH: /analytics
       INFLUXDB_URL: $INFLUX_HOST
@@ -504,8 +514,8 @@ services:
     restart: always
     container_name: logstash
     hostname: logstash
-    << : *std-network
-    << : *std-logging
+    <<: *std-network
+    <<: *std-logging
     depends_on:
       - elastic
       - validate-logstash-config
@@ -521,8 +531,8 @@ services:
       - kibana
     restart: "no"
     container_name: validate-logstash
-    << : *std-network
-    << : *std-logging
+    <<: *std-network
+    <<: *std-logging
     volumes:
       - ${PWD}/config/logstash/config:/config
     command: logstash -t -f /config
@@ -535,8 +545,8 @@ services:
     restart: unless-stopped
     container_name: logspout
     hostname: logspout
-    << : *std-network
-    << : *std-logging
+    <<: *std-network
+    <<: *std-logging
     depends_on:
       - logstash
     volumes:
@@ -550,8 +560,8 @@ services:
     restart: always
     container_name: kibana
     hostname: kibana
-    << : *std-network
-    << : *std-logging
+    <<: *std-network
+    <<: *std-logging
     depends_on:
       - elastic
     environment:
@@ -571,8 +581,8 @@ services:
       - kibana
     container_name: curator
     hostname: curator
-    << : *std-network
-    << : *std-logging
+    <<: *std-network
+    <<: *std-logging
     depends_on:
       - elastic
     volumes:
@@ -588,8 +598,8 @@ services:
     container_name: metricbeat
     hostname: metricbeat
     user: root
-    << : *std-network
-    << : *std-logging
+    <<: *std-network
+    <<: *std-logging
     depends_on:
       - elastic
     environment:
@@ -603,4 +613,12 @@ services:
     cap_add:
       - SYS_PTRACE
       - DAC_READ_SEARCH
-    command: ["metricbeat", "-e", "--strict.perms=false", "-system.hostfs=/hostfs", "-E", "output.elasticsearch.hosts=[$ELASTIC_HOST:$ELASTIC_PORT]"]
+    command:
+      [
+        "metricbeat",
+        "-e",
+        "--strict.perms=false",
+        "-system.hostfs=/hostfs",
+        "-E",
+        "output.elasticsearch.hosts=[$ELASTIC_HOST:$ELASTIC_PORT]"
+      ]
