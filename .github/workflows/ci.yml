@@ -48,7 +48,7 @@ jobs:
           - "" # Test an empty tag
           - placeos-1.2201.1
           - placeos-1.2202.2
-          - placeos-1.2204.1
+          - placeos-1.2204.2
           - latest
           - preview
         include:
