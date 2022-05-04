@@ -142,7 +142,7 @@ Arguments:
     -h, --help              Display this message.
 ```
 
-### `$ placeos task`
+### [`$ placeos task`](https://github.com/PlaceOS/init/#scripts)
 
 ```shell-session
 Usage: placeos task [-h|--help|help] [--list] <task> [help|...] [arguments...]
