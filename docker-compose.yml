@@ -52,6 +52,7 @@ x-influxdb-client-env: &influxdb-client-env
   INFLUX_ORG: ${INFLUX_ORG:-PlaceOS}
 
 x-opentelemetry-env: &opentelemetry-env
+  OTEL_EXPORTER_OTLP_HEADERS: ${OTEL_EXPORTER_OTLP_HEADERS:-}
   OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
   OTEL_EXPORTER_OTLP_API_KEY: ${OTEL_EXPORTER_OTLP_API_KEY:-}
 
@@ -262,6 +263,7 @@ services:
       - *jwt-public-key-env
       - *secret-key-env
     environment:
+      <<: *opentelemetry-env
       <<: *redis-client-env
       SG_ENV: production
       STAFF_TIME_ZONE: $TZ
