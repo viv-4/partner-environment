@@ -1,13 +1,12 @@
 on:
-  pull_request:
-    branches:
-      - master
-    types: [closed]
+  pull_request_target:
+    types:
+      - closed
 
 jobs:
   tag:
     name: Tag new release
-    if: ${{ github.event.pull_request.merged && startsWith(github.event.pull_request.title, 'release/') }}
+    if: github.event.pull_request.merged == true && startsWith(github.event.pull_request.title, 'release/')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
