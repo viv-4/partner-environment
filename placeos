@@ -26,6 +26,13 @@ banner() (
     echo
 )
 
+# Checks that files used for `docker-compose.yml` to function are present.
+ensure_env_files() (
+    for expected_file in .env.chronograf .env.influxdb .env.public_key .env.secret_key; do
+        [[ ! -f "$expected_file" ]] && touch "$expected_file"
+    done
+)
+
 # This functions mutates the outer scope, hence {} are used
 load_environment() {
     # Save the existing environment
@@ -837,6 +844,8 @@ if [ $# -eq 0 ]; then
     usage
     exit 1
 fi
+
+ensure_env_files
 
 command="$1"
 shift

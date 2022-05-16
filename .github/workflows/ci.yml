@@ -72,13 +72,10 @@ jobs:
       - name: Test initialization, with unset PLACEOS_TAG
         if: ${{ matrix.version == '' }} # Testing an empty tag
         run: |
-          docker-compose down --volumes &> /dev/null
-          rm .env.*
           ./placeos start --verbose
         env:
           PLACE_EMAIL: robot@place.tech
           PLACE_PASSWORD: development
-          ETCD_VERSION: 3.5.1
       - name: Upload logs
         if: ${{ failure() }}
         uses: actions/upload-artifact@v2
