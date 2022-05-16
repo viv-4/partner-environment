@@ -57,7 +57,7 @@ jobs:
         commit-message: 'build: update to ${{ needs.latest.outputs.version }}'
         files: .env .github/workflows/ci.yml
         force-add: 'true'
-        github-token: ${{ secrets.GITHUB_TOKEN }}
+        github-token: ${{ secrets.GH_UPDATE_TOKEN }}
         push-branch: ${{ steps.update.outputs.branch }}
         name: PlaceOS Robot
         email: robots@placeos.com
@@ -66,7 +66,7 @@ jobs:
       shell: bash
       run: |
         # Login with GitHub CLI
-        echo ${{ secrets.GITHUB_TOKEN }} | gh auth login --with-token
+        echo ${{ secrets.GH_UPDATE_TOKEN }} | gh auth login --with-token
 
         # Create PR
         gh pr create \
