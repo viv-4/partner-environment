@@ -50,6 +50,7 @@ jobs:
           - placeos-1.2202.2
           - placeos-1.2204.2
           - placeos-1.2205.0
+          - placeos-1.2205.1
           - latest
           - preview
         include:
