@@ -26,19 +26,22 @@ jobs:
         echo ::set-output name=version::$latest
 
   update:
+    if: needs.latest.outputs.version != 'nightly'
     name: Update
     needs: latest
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
       uses: actions/checkout@v3
+      with:
+        token: ${{ secrets.GH_UPDATE_TOKEN }}
 
     - name: Update files
       id: update
       shell: bash
       run: |
         set -euo pipefail
-        set -x #echo on
+        set -x
 
         branch=release/${{ needs.latest.outputs.version }}
         echo ::set-output name=branch::$branch
@@ -52,18 +55,28 @@ jobs:
             .github/workflows/ci.yml
 
     - name: Commit and Push
-      uses: github-actions-x/commit@v2.9
-      with:
-        commit-message: 'build: update to ${{ needs.latest.outputs.version }}'
-        files: .env .github/workflows/ci.yml
-        force-add: 'true'
-        github-token: ${{ secrets.GH_UPDATE_TOKEN }}
-        push-branch: ${{ steps.update.outputs.branch }}
-        name: PlaceOS Robot
-        email: robots@placeos.com
+      shell: bash
+      env:
+        BRANCH: ${{ steps.update.outputs.branch }}
+        VERSION: ${{ needs.latest.outputs.version }}
+      run: |
+        set -euo pipefail
+        set -x
+
+        git config user.email "robots@place.technology"
+        git config user.name "PlaceOS Robot"
+
+        git checkout -b "${BRANCH}"
+
+        git add .env .github/workflows/ci.yml
+        git commit --message="build: update to ${VERSION}"
+        git push
 
     - name: Create PR
       shell: bash
+      env:
+        BRANCH: ${{ steps.update.outputs.branch }}
+        VERSION: ${{ needs.latest.outputs.version }}
       run: |
         # Login with GitHub CLI
         echo ${{ secrets.GH_UPDATE_TOKEN }} | gh auth login --with-token
@@ -71,9 +84,8 @@ jobs:
         # Create PR
         gh pr create \
             --fill \
-            --head '${{ steps.update.outputs.branch }}' \
+            --head "${BRANCH}" \
             --assignee 'placeos-robot' \
-            --reviewer 'place-labs/ops' \
             --label 'type: maintenance' \
             --base master \
-            --body 'See the details for `placeos-${{ needs.latest.outputs.version }}`[here](https://github.com/PlaceOS/PlaceOS/releases/tag/${{ needs.latest.outputs.version }}).'
+            --body "See the details for \`placeos-${VERSION}\`[here](https://github.com/PlaceOS/PlaceOS/releases/tag/${VERSION})."
