@@ -1,8 +1,6 @@
 name: Render Compose Graph
 on:
   push:
-    branches:
-      - "master"
     paths:
       - docker-compose.yml
       - .github/workflows/render-compose.yml
