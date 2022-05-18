@@ -11,14 +11,18 @@ jobs:
       - uses: actions/checkout@v3
       - name: Generate graph
         run: |
-          chmod 777 images
-          docker run --network none --rm -v $(pwd):/input:rw pmsipilot/docker-compose-viz \
-             render --force \
-             -m image \
-             --horizontal \
-             --no-volumes --no-networks \
-             -o ./images/service-graph.png \
-             docker-compose.yml
+          chmod -R 777 images
+          docker run \
+             --network none \
+             --rm \
+             -v $(pwd):/input:rw \
+             pmsipilot/docker-compose-viz \
+                render --force \
+                -m image \
+                --horizontal \
+                --no-volumes --no-networks \
+                -o ./images/service-graph.png \
+                docker-compose.yml
       - name: Commit and push
         shell: bash
         run: |
