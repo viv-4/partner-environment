@@ -93,11 +93,11 @@ x-logging: &std-logging
 services:
   # Services
 
-  api: # Rest API
+  rest-api: # Rest API
     image: placeos/rest-api:${PLACE_REST_API_TAG:-latest}
     restart: always
-    container_name: api
-    hostname: api
+    container_name: rest-api
+    hostname: rest-api
     <<: *std-network
     <<: *std-logging
     depends_on:
@@ -249,15 +249,15 @@ services:
       <<: *rethinkdb-client-env
       <<: *smtp-client-env
 
-  staff: # Staff API
+  staff-api: # Staff API
     image: placeos/staff-api:${PLACE_STAFF_API_TAG:-latest}
-    container_name: staff
-    hostname: staff
+    container_name: staff-api
+    hostname: staff-api
     restart: unless-stopped
     <<: *std-network
     <<: *std-logging
     depends_on:
-      - api
+      - rest-api
       - postgres
     env_file:
       - *jwt-public-key-env
@@ -457,9 +457,9 @@ services:
     <<: *std-network
     <<: *std-logging
     depends_on:
-      - api
+      - rest-api
       - auth
-      - staff
+      - staff-api
     volumes:
       - type: volume
         source: www
