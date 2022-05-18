@@ -29,5 +29,5 @@ jobs:
           git config user.email "robots@place.technology"
           git config user.name "PlaceOS Robot"
           git add images/service-graph.png
-          git commit --message="docs: update service graph for changes in ${{ github.head_ref }}"
+          git commit --message="docs: update service graph for changes in ${{ github.sha }}"
           git push
