@@ -70,7 +70,7 @@ jobs:
 
         git add .env .github/workflows/ci.yml
         git commit --message="build: update to ${VERSION}"
-        git push
+        git push -u origin "${BRANCH}"
 
     - name: Create PR
       shell: bash
