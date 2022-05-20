@@ -36,7 +36,18 @@ jobs:
       with:
         token: ${{ secrets.GH_UPDATE_TOKEN }}
 
+    - name: Should Update?
+      id: should
+      run: |
+        if [[ $(git tag --list) =~ "placeos-{{ needs.latest.outputs.version }}"]]; then
+          # Ignore update if tag already exists
+          echo "::set-output name=update::false"
+        else
+          echo "::set-output name=update::true"
+        fi
+
     - name: Update files
+      if: steps.should.outputs.update == 'true'
       id: update
       shell: bash
       run: |
@@ -55,6 +66,7 @@ jobs:
             .github/workflows/ci.yml
 
     - name: Commit and Push
+      if: steps.should.outputs.update == 'true'
       shell: bash
       env:
         BRANCH: ${{ steps.update.outputs.branch }}
@@ -73,6 +85,7 @@ jobs:
         git push -u origin "${BRANCH}"
 
     - name: Create PR
+      if: steps.should.outputs.update == 'true'
       shell: bash
       env:
         BRANCH: ${{ steps.update.outputs.branch }}
