@@ -39,7 +39,7 @@ jobs:
     - name: Should Update?
       id: should
       run: |
-        if [[ $(git tag --list) =~ "placeos-{{ needs.latest.outputs.version }}"]]; then
+        if [[ $(git tag --list) =~ "placeos-${{ needs.latest.outputs.version }}"]]; then
           # Ignore update if tag already exists
           echo "::set-output name=update::false"
         else
