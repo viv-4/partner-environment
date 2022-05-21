@@ -29,7 +29,7 @@ banner() (
 # Checks that files used for `docker-compose.yml` to function are present.
 ensure_env_files() (
     for expected_file in .env.chronograf .env.influxdb .env.public_key .env.secret_key; do
-        [[ ! -f "$expected_file" ]] && touch "$expected_file"
+        [[ ! -f "$expected_file" ]] && touch "$expected_file" || true
     done
 )
 
@@ -821,7 +821,7 @@ usage() (
     cat <<EOF
 Usage: placeos [-h|--help] [--version] [command]
 
-Helper script for interfacing with {PLACEOS_PRODUCT}.
+Helper script for interfacing with ${PLACEOS_PRODUCT}.
 
 Command:
     start                   Start the environment.
