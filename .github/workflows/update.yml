@@ -58,7 +58,7 @@ jobs:
         echo ::set-output name=branch::$branch
 
         # Update `.env`
-        sed --in-place=.bak -E 's/^PLACEOS_TAG=.*/PLACEOS_TAG=${PLACEOS_TAG:-placeos-${{ needs.latest.outputs.version }}}/g' \
+        sed --in-place=.bak -E 's/^PLACEOS_TAG=.*/PLACEOS_TAG=placeos-${{ needs.latest.outputs.version }}/g' \
             .env
 
         # Update CI matrix

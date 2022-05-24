@@ -13,6 +13,12 @@ PLACEOS_PRODUCT="PlaceOS Local"
 # Whether to write to STDOUT or not
 VERBOSE="${VERBOSE:-"false"}"
 
+EMPTY_FILE="$(touch /tmp/placeos-empty-env; echo "/tmp/placeos-empty-env")"
+
+cleanup() (
+    rm "$EMPTY_FILE" || true
+)
+
 banner() (
     echo
     echo '░░░░░░░\  ░░\                                ░░░░░░\   ░░░░░░\'
@@ -34,39 +40,8 @@ ensure_env_files() (
 )
 
 # This functions mutates the outer scope, hence {} are used
-load_environment() {
-    # Save the existing environment
-    ext_env=$(mktemp)
-    export -p >"${ext_env}"
-    set -o allexport
-
-    # Load contents of .env
-    . "${base_path}/.env"
-
-    # Overlay the existing environment
-    . "${ext_env}"
-
-    # Conditional config for backwards compat
-    if [[ $PLACEOS_TAG =~ ^placeos-[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-
-        if [[ $PLACEOS_TAG < "placeos-1.2108.2" ]]; then
-            export PLACE_STAFF_API_TAG="nightly"
-            export PLACE_NGINX_TAG="staff-api"
-        fi
-
-        if [[ $PLACEOS_TAG < "placeos-1.2109.0" ]]; then
-            export PLACE_FRONTEND_LOADER_IMAGE="frontends"
-        fi
-
-        if [[ $PLACEOS_TAG < "placeos-1.2111.0" ]]; then
-            export PLACE_SEARCH_INGEST_IMAGE="rubber-soul"
-        fi
-    fi
-
-    # Cleanup
-    set +o allexport
-    rm "${ext_env}"
-    unset ext_env
+load_environment () {
+    eval "$("${base_path}/scripts/shdotenv" --dialect ruby --env "${base_path}/.env")"
 }
 
 # Path of directory containing the script
@@ -171,7 +146,7 @@ hard_reset() (
         "Failed to drop Elasticsearch indices."
 
     run_or_abort \
-        "docker-compose --project-directory='${base_path}' restart nginx" \
+        "docker-compose --env-file='${EMPTY_FILE}' --project-directory='${base_path}' restart nginx" \
         "Restarting nginx..." \
         "Failed to restart nginx." \
         "true"
@@ -344,8 +319,9 @@ start_environment() (
         "Generating secrets..." \
         "Failed to generate secrets."
 
+
     run_or_abort \
-        "docker-compose --project-directory='${base_path}' ${PROFILES} pull -q" \
+        "docker-compose --env-file='${EMPTY_FILE}' --project-directory='${base_path}' ${PROFILES} pull --quiet" \
         "Pulling images..." \
         "Failed to pull images."
 
@@ -357,7 +333,7 @@ start_environment() (
         "Failed to create user entity."
 
     run_or_abort \
-        "docker-compose --project-directory='${base_path}' ${PROFILES} up -d" \
+        "docker-compose --env-file='${EMPTY_FILE}' --project-directory='${base_path}' ${PROFILES} up --detach" \
         "Bringing up services..." \
         "Failed to start services."
 
@@ -407,7 +383,7 @@ stop_environment() (
     done
 
     run_or_abort \
-        "docker-compose --project-directory='${base_path}' down --remove-orphans" \
+        "docker-compose --env-file='${EMPTY_FILE}' --project-directory='${base_path}' down --remove-orphans" \
         "Tearing down $PLACEOS_PRODUCT" \
         "Failed to teardown $PLACEOS_PRODUCT"
 )
@@ -540,10 +516,8 @@ changelog() (
         changelog_uri="https://github.com/${PLACEOS_RELEASE_REPO}/blob/${PLACEOS_RELEASE_BRANCH}/CHANGELOG.md#${anchor}"
 
         if [[ $full_changelog == "true" ]]; then
-            full_prefix="Full "
             output="$(cat "$temporary_changelog")"
         else
-            full_prefix=""
             output="$(sed -n "/^$previous_version_header/q;p" "$temporary_changelog")"
         fi
 
@@ -621,7 +595,7 @@ update_environment() (
 
     if [[ $restart_services == "true" ]]; then
         run_or_abort \
-            "docker-compose --project-directory='${base_path}' restart" \
+            "docker-compose --env-file='${EMPTY_FILE}' --project-directory='${base_path}' restart" \
             "Restarting services on ${version}..." \
             "Failed to restart services"
     fi
@@ -777,7 +751,7 @@ uninstall_environment() (
 
     # Stop environment and remove containers, volumes, and images.
     run_or_abort \
-        "docker-compose --project-directory='${base_path}' down --volumes --networks --rmi all" \
+        "docker-compose --env-file='${EMPTY_FILE}' --project-directory='${base_path}' down --volumes --networks --rmi all" \
         "Stopping ${PLACEOS_PRODUCT}..." \
         "Failed to stop ${PLACEOS_PRODUCT}"
 
@@ -881,3 +855,5 @@ uninstall)
     unknown_argument "${command}" "usage"
     ;;
 esac
+
+cleanup

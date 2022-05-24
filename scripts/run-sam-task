@@ -3,8 +3,10 @@ set -euo pipefail
 
 # Path of installation directory
 base_path="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)/../"
+EMPTY_FILE="$(touch /tmp/placeos-empty-env; echo "/tmp/placeos-empty-env")"
 
 COMPOSE_PROJECT_NAME=placeos \
     docker-compose \
+        --env-file="$EMPTY_FILE" \
         --project-directory="$base_path" \
         run --rm init task "$@"
