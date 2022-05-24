@@ -99,7 +99,7 @@ services:
     image: placeos/rest-api:${PLACE_REST_API_TAG:-latest}
     restart: always
     container_name: rest-api
-    hostname: rest-api
+    hostname: api # Retained as nginx upstream is `api`
     <<: *std-network
     <<: *std-logging
     depends_on:
@@ -261,7 +261,7 @@ services:
   staff-api: # Staff API
     image: placeos/staff-api:${PLACE_STAFF_API_TAG:-latest}
     container_name: staff-api
-    hostname: staff-api
+    hostname: staff # Retained as nginx upstream is `staff`
     restart: unless-stopped
     <<: *std-network
     <<: *std-logging
