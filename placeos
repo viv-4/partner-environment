@@ -589,7 +589,7 @@ update_environment() (
     fi
 
     run_or_abort \
-        "sed -i '.bak' -E 's/^PLACEOS_TAG=.*$/PLACEOS_TAG=\${PLACEOS_TAG:-${version}}/g' '.env'" \
+        "sed -i '.bak' -E 's/^PLACEOS_TAG=.*$/PLACEOS_TAG=${version}/g' '.env'" \
         "Updating to ${version}" \
         "Failed to update to ${version}"
 
