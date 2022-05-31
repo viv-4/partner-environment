@@ -519,7 +519,7 @@ services:
     container_name: redis
     hostname: redis
     healthcheck:
-      test: redis-cli ping
+      test: keydb-cli ping
     <<: *std-network
     <<: *std-logging
     volumes:
