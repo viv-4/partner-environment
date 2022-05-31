@@ -112,8 +112,7 @@ run_or_abort() {
 ###################################################################################################
 
 PLACEOS_RELEASE_REPO="PlaceOS/PlaceOS"
-# TODO: Change to `release` once the flow has been established
-PLACEOS_RELEASE_BRANCH="nightly"
+PLACEOS_RELEASE_BRANCH="release"
 
 CALVER_FULL_REGEX='[0-9]+\.[0-9]{4}\.[0-9]+(-rc[0-9]+)?'
 CALVER_MONTH_REGEX='[0-9]+\.[0-9]{4}'
@@ -132,8 +131,8 @@ fetch_release_tags() (
 ###################################################################################################
 
 hard_reset() (
-    # TODO: drop influxdb tables
-    # TODO: clear redis
+    # TODO: Drop influxdb tables
+    # TODO: Clear redis
 
     run_or_abort \
         "${base_path}/scripts/run-sam-task drop:db" \
@@ -295,7 +294,7 @@ start_environment() (
 
     # Write the email so as to not prompt the user again.
     echo "PLACE_EMAIL=${PLACE_EMAIL}" >"${EMAIL_ENV}"
-    # TODO: use init check instead of writing the password.
+    # TODO: Use init check instead of writing the password.
     echo "PLACE_PASSWORD=${PLACE_PASSWORD}" >>"${EMAIL_ENV}"
 
     if [[ $ENABLE_ANALYTICS == "true" ]] || [[ $enable_analytics == "true" ]]; then
