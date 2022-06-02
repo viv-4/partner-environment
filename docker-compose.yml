@@ -164,6 +164,7 @@ services:
 
   core: # Module coordinator
     image: ${CONTAINER_REGISTRY:-docker.io}/placeos/core:${PLACE_CORE_TAG:-latest}
+    init: true # An init process prevents leaking of PlaceOS Driver processes
     restart: always
     container_name: core
     hostname: core
