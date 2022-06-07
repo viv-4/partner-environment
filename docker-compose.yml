@@ -113,7 +113,7 @@ services:
   # Services
 
   rest-api: # Rest API
-    image: ${CONTAINER_REGISTRY:-docker.io}/placeos/rest-api:${PLACE_REST_API_TAG:-latest}
+    image: ${PLACE_REST_API_REGISTRY:-docker.io}/placeos/rest-api:${PLACE_REST_API_TAG:-latest}
     restart: always
     container_name: rest-api
     hostname: api # Retained as nginx upstream is `api`
@@ -142,7 +142,7 @@ services:
       <<: *search-ingest-client-env
 
   auth: # Authentication Service
-    image: ${CONTAINER_REGISTRY:-docker.io}/placeos/auth:${PLACE_AUTH_TAG:-latest}
+    image: ${PLACE_AUTH_REGISTRY:-docker.io}/placeos/auth:${PLACE_AUTH_TAG:-latest}
     restart: always
     container_name: auth
     hostname: auth
@@ -163,7 +163,7 @@ services:
       PLACE_URI: https://${PLACE_DOMAIN:-localhost:8443}
 
   core: # Module coordinator
-    image: ${CONTAINER_REGISTRY:-docker.io}/placeos/core:${PLACE_CORE_TAG:-latest}
+    image: ${PLACE_CORE_REGISTRY:-docker.io}/placeos/core:${PLACE_CORE_TAG:-latest}
     init: true # An init process prevents leaking of PlaceOS Driver processes
     restart: always
     container_name: core
@@ -198,7 +198,7 @@ services:
       <<: *rethinkdb-client-env
 
   edge: # Module coordinator
-    image: ${CONTAINER_REGISTRY:-docker.io}/placeos/edge:${PLACE_EDGE_TAG:-latest}
+    image: ${PLACE_EDGE_REGISTRY:-docker.io}/placeos/edge:${PLACE_EDGE_TAG:-latest}
     restart: "no"
     container_name: edge
     hostname: edge
@@ -212,7 +212,7 @@ services:
       <<: *edge-env
 
   frontend-loader: # Frontend deployment service
-    image: ${CONTAINER_REGISTRY:-docker.io}/placeos/${PLACE_FRONTEND_LOADER_IMAGE:-frontend-loader}:${PLACE_FRONTEND_LOADER_TAG:-latest}
+    image: ${PLACE_FRONTEND_LOADER_REGISTRY:-docker.io}/placeos/${PLACE_FRONTEND_LOADER_IMAGE:-frontend-loader}:${PLACE_FRONTEND_LOADER_TAG:-latest}
     restart: always
     container_name: frontend-loader
     hostname: frontend-loader
@@ -235,7 +235,7 @@ services:
       PLACE_LOADER_WWW: www
 
   source:
-    image: ${CONTAINER_REGISTRY:-docker.io}/placeos/source:${PLACE_SOURCE_TAG:-latest}
+    image: ${PLACE_SOURCE_REGISTRY:-docker.io}/placeos/source:${PLACE_SOURCE_TAG:-latest}
     profiles:
       - analytics
     restart: always
@@ -260,7 +260,7 @@ services:
       <<: *rethinkdb-client-env
 
   triggers: # Conditional execution service
-    image: ${CONTAINER_REGISTRY:-docker.io}/placeos/triggers:${PLACE_TRIGGERS_TAG:-latest}
+    image: ${PLACE_TRIGGERS_REGISTRY:-docker.io}/placeos/triggers:${PLACE_TRIGGERS_TAG:-latest}
     restart: always
     container_name: triggers
     hostname: triggers
@@ -284,7 +284,7 @@ services:
       <<: *smtp-client-env
 
   staff-api: # Staff API
-    image: ${CONTAINER_REGISTRY:-docker.io}/placeos/staff-api:${PLACE_STAFF_API_TAG:-latest}
+    image: ${PLACE_STAFF_API_REGISTRY:-docker.io}/placeos/staff-api:${PLACE_STAFF_API_TAG:-latest}
     container_name: staff-api
     hostname: staff # Retained as nginx upstream is `staff`
     restart: unless-stopped
@@ -309,7 +309,7 @@ services:
   # Support
 
   init:
-    image: ${CONTAINER_REGISTRY:-docker.io}/placeos/init:${PLACE_INIT_TAG:-latest}
+    image: ${PLACE_INIT_REGISTRY:-docker.io}/placeos/init:${PLACE_INIT_TAG:-latest}
     container_name: init
     restart: on-failure
     <<: *std-network
@@ -336,7 +336,7 @@ services:
       <<: *elastic-client-env
 
   search-ingest: # RethinkDB to Elasticsearch Service
-    image: ${CONTAINER_REGISTRY:-docker.io}/placeos/${PLACE_SEARCH_INGEST_IMAGE:-search-ingest}:${PLACE_SEARCH_INGEST_TAG:-latest}
+    image: ${PLACE_SEARCH_INGEST_REGISTRY:-docker.io}/placeos/${PLACE_SEARCH_INGEST_IMAGE:-search-ingest}:${PLACE_SEARCH_INGEST_TAG:-latest}
     restart: always
     container_name: *search-ingest-service
     hostname: *search-ingest-service
@@ -354,7 +354,7 @@ services:
       <<: *elastic-client-env
 
   dispatch: # Engine driver server registration and data routing
-    image: ${CONTAINER_REGISTRY:-docker.io}/placeos/dispatch:${PLACE_DISPATCH_TAG:-latest}
+    image: ${PLACE_DISPATCH_REGISTRY:-docker.io}/placeos/dispatch:${PLACE_DISPATCH_TAG:-latest}
     restart: always
     container_name: dispatch
     hostname: dispatch
@@ -482,7 +482,7 @@ services:
       TZ: $TZ
 
   nginx:
-    image: ${CONTAINER_REGISTRY:-docker.io}/placeos/nginx:${PLACE_NGINX_TAG:-latest}
+    image: ${PLACE_NGINX_REGISTRY:-docker.io}/placeos/nginx:${PLACE_NGINX_TAG:-latest}
     restart: always
     container_name: nginx
     hostname: nginx
