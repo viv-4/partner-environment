@@ -48,8 +48,8 @@ jobs:
           - "" # Test an empty tag
           - placeos-1.2201.1
           - placeos-1.2202.2
-          - placeos-1.2204.2
           - placeos-1.2205.4
+          - placeos-1.2206.1
           - latest
           - preview
         include:
@@ -85,6 +85,6 @@ jobs:
         run: docker-compose ps
       - name: Check API is reachable
         continue-on-error: true
-        run: curl --retry 10 --insecure -fsSL https://localhost:8443/api/engine/v2
+        run: curl -S --retry 10 --tls-max 1 --insecure https://localhost:8443/api/engine/v2
       - name: Test raw `docker-compose`
         run: docker-compose down
