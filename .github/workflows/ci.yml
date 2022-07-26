@@ -46,10 +46,10 @@ jobs:
           - ubuntu-latest
         version:
           - "" # Test an empty tag
-          - placeos-1.2201.1
           - placeos-1.2202.2
           - placeos-1.2205.4
           - placeos-1.2206.1
+          - placeos-1.2207.0
           - latest
           - preview
         include:
