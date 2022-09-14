@@ -388,7 +388,7 @@ services:
       POSTGRES_PASSWORD: $POSTGRES_PASSWORD
 
   elastic:
-    image: blacktop/elasticsearch:${ELASTIC_VERSION:-7.10.2}
+    image: elasticsearch:${ELASTIC_VERSION:-7.17.6}
     restart: always
     container_name: elastic
     hostname: elastic
