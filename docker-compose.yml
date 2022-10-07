@@ -46,7 +46,7 @@ x-deployment-env: &deployment-env
   TZ: $TZ
 
 x-edge-env: &edge-env
-  PLACE_EDGE_SECRET: ${PLACE_EDGE_SECRET:-}
+  PLACE_EDGE_KEY: ${PLACE_EDGE_KEY:-}
   PLACE_URI: ${PLACE_URI:-http://api:3000}
 
 x-jwt-public-key-env: &jwt-public-key-env .env.public_key
