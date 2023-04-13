@@ -136,8 +136,8 @@ hard_reset() (
 
     run_or_abort \
         "${base_path}/scripts/run-sam-task drop:db" \
-        "Dropping RethinkDB tables..." \
-        "Failed to drop RethinkDB tables."
+        "Dropping PostgreSQL tables..." \
+        "Failed to drop PostgreSQL tables."
 
     run_or_abort \
         "${base_path}/scripts/run-sam-task drop:elastic" \
@@ -787,6 +787,51 @@ version() (
     echo "${PLACEOS_TAG}"
 )
 
+# Migrate
+###################################################################################################
+
+migrate__usage() (
+    cat <<EOF
+Usage: placeos migrate
+
+Run a RethinkDB data migration in the ${PLACEOS_PRODUCT} environment.
+
+Arguments:
+    -a, --appends           Don't clean tables before loading RethinkDB data. Defaults to True
+    -h, --help              Display this message.
+EOF
+)
+
+migrate() (
+    load_environment
+    clean="true"
+
+    while [ ${#} -gt 0 ]; do
+        command="${1}"
+        shift
+        case ${command} in
+        -h | --help)
+            migrate__usage
+            exit 0
+            ;;
+        -a | --clean)
+            clean="false"
+            ;;
+        *)
+            unknown_argument "${command}" "migrate__usage"
+            ;;
+        esac
+    done
+
+    echo "Running migration"
+    # shellcheck disable=2086
+    ./scripts/run-migration ${clean}
+    run_or_abort \
+    "docker-compose --env-file='${EMPTY_FILE}' --project-directory='${base_path}' ${PROFILES} up --detach" \
+    "Bringing up services..." \
+    "Failed to start services."
+)
+
 # Root Command
 ###################################################################################################
 
@@ -803,6 +848,7 @@ Command:
     changelog               Displays platform changelog (in markdown).
     update                  Update the platform version.
     upgrade                 Upgrade {PLACEOS_PRODUCT}.
+    migrate                 Migrate RethinkDB data to PostgreSQL
     uninstall               Uninstalls {PLACEOS_PRODUCT}.
     version                 Render PlaceOS version in use.
     help                    Display this message.
@@ -840,6 +886,9 @@ update)
     ;;
 upgrade)
     upgrade_environment "$@"
+    ;;
+migrate)
+    migrate "$@"
     ;;
 uninstall)
     uninstall_environment "$@"

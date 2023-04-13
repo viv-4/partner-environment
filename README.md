@@ -29,6 +29,7 @@ For use when testing, improving or experimenting with PlaceOS on a local machine
     - [`$ placeos changelog`](#-placeos-changelog)
     - [`$ placeos update`](#-placeos-update)
     - [`$ placeos upgrade`](#-placeos-upgrade)
+    - [`$ placeos migrate`](#-placeos-migrate)
     - [`$ placeos uninstall`](#-placeos-uninstall)
   - [Service Graph](#service-graph)
 <!-- /toc -->
@@ -193,6 +194,18 @@ If VERSION is omitted, defaults to the most recent stable version.
 Arguments:
     --list                  Lists versions of PlaceOS Local.
     -q, --quiet             Do not write command logs to STDOUT.
+    -h, --help              Display this message.
+```
+
+### `$ placeos migrate`
+
+```shell-session
+Usage: placeos migrate
+
+Run a RethinkDB data migration in the local environment.
+
+Arguments:
+    -a, --appends           Don't clean tables before loading RethinkDB data. Defaults to True
     -h, --help              Display this message.
 ```
 

@@ -15,7 +15,6 @@ volumes:
   nginx-data:
   postgres-data:
   redis-data:
-  rethink-data:
   core-repositories:
   core-drivers:
   www:
@@ -58,6 +57,7 @@ x-elastic-client-env: &elastic-client-env
   ELASTIC_PORT: ${ELASTIC_PORT:-9200}
   ES_HOST: ${ELASTIC_HOST:-elastic}
   ES_PORT: ${ELASTIC_PORT:-9200}
+  ES_DISABLE_BULK: true
 
 x-etcd-client-env: &etcd-client-env
   ETCD_HOST: ${ETCD_HOST:-etcd}
@@ -81,10 +81,15 @@ x-place-loader-client-env: &place-loader-client-env
 x-redis-client-env: &redis-client-env
   REDIS_URL: ${REDIS_URL:-redis://redis:6379}
 
-x-rethinkdb-client-env: &rethinkdb-client-env
-  RETHINKDB_HOST: ${RETHINKDB_HOST:-rethink}
-  RETHINKDB_PORT: ${RETHINKDB_PORT:-28015}
-  RETHINKDB_DB: ${RETHINKDB_DB:-place_development}
+x-postgresdb-client-env: &postgresdb-client-env
+  PG_HOST: ${PG_HOST:-postgres}
+  PG_PORT: ${PG_PORT:-5432}
+  PG_DB: ${PG_DB:-place_development}
+  PG_USER: ${POSTGRES_USER:-postgres}
+  PG_PASSWORD: ${POSTGRES_PASSWORD:-password}
+  PG_DATABASE: ${PG_DB:-place_development}
+  PG_DATABASE_URL: ${PG_DATABASE_URL:-postgresql://placeos:development@postgres:5432/place_development}
+
 
 x-search-ingest-client-env: &search-ingest-client-env
   PLACE_SEARCH_INGEST_URI: ${PLACE_SEARCH_INGEST_URI:-http://search-ingest:3000}
@@ -124,7 +129,7 @@ services:
       - elastic
       - etcd
       - redis
-      - rethink
+      - postgres
       - search-ingest
     <<: *cap-drop
     env_file:
@@ -138,7 +143,7 @@ services:
       <<: *etcd-client-env
       <<: *place-loader-client-env
       <<: *redis-client-env
-      <<: *rethinkdb-client-env
+      <<: *postgresdb-client-env
       <<: *search-ingest-client-env
     deploy:
       resources:
@@ -154,13 +159,13 @@ services:
     <<: *std-logging
     depends_on:
       - redis
-      - rethink
+      - postgres
     <<: *cap-drop
     env_file:
       - *secret-key-env
     environment:
       <<: *opentelemetry-env
-      <<: *rethinkdb-client-env
+      <<: *postgresdb-client-env
       <<: *redis-client-env
       COAUTH_NO_SSL: "true"
       TZ: $TZ
@@ -181,7 +186,7 @@ services:
     depends_on:
       - etcd
       - redis
-      - rethink
+      - postgres
     volumes:
       - type: volume
         source: core-repositories
@@ -203,7 +208,7 @@ services:
       # Service Hosts
       <<: *etcd-client-env
       <<: *redis-client-env
-      <<: *rethinkdb-client-env
+      <<: *postgresdb-client-env
     deploy:
       resources:
         limits:
@@ -239,7 +244,7 @@ services:
         source: www
         target: /app/www
     depends_on:
-      - rethink
+      - postgres
     <<: *cap-drop
     env_file:
       - *secret-key-env
@@ -247,7 +252,7 @@ services:
       <<: *deployment-env
       <<: *opentelemetry-env
       # Service Hosts
-      <<: *rethinkdb-client-env
+      <<: *postgresdb-client-env
       PLACE_LOADER_WWW: www
     deploy:
       resources:
@@ -266,7 +271,7 @@ services:
     depends_on:
       - influxdb
       - redis
-      - rethink
+      - postgres
     <<: *cap-drop
     env_file:
       - *influxdb-api-key
@@ -277,7 +282,7 @@ services:
       # Service Hosts
       <<: *influxdb-client-env
       <<: *redis-client-env
-      <<: *rethinkdb-client-env
+      <<: *postgresdb-client-env
     deploy:
       resources:
         limits:
@@ -294,7 +299,7 @@ services:
       - core
       - etcd
       - redis
-      - rethink
+      - postgres
     <<: *cap-drop
     env_file:
       - *secret-key-env
@@ -304,7 +309,7 @@ services:
       # Service Hosts
       <<: *etcd-client-env
       <<: *redis-client-env
-      <<: *rethinkdb-client-env
+      <<: *postgresdb-client-env
       <<: *smtp-client-env
     deploy:
       resources:
@@ -328,9 +333,10 @@ services:
     environment:
       <<: *opentelemetry-env
       <<: *redis-client-env
+      <<: *postgresdb-client-env
       SG_ENV: production
       STAFF_TIME_ZONE: $TZ
-      PG_DATABASE_URL: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres/placeos"
+      #PG_DATABASE_URL: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres/$P"
       PLACE_URI: "https://nginx"
       SSL_VERIFY_NONE: "true"
     deploy:
@@ -347,8 +353,9 @@ services:
     <<: *std-network
     <<: *std-logging
     depends_on:
-      - rethink
-      - search-ingest
+      postgres:
+        condition: service_healthy
+      #- search-ingest
     <<: *cap-drop
     env_file:
       - *secret-key-env
@@ -364,10 +371,10 @@ services:
       PLACE_PASSWORD: ${PLACE_PASSWORD:-development}
       PLACE_TLS: "${PLACE_TLS:-true}"
       # Service Hosts
-      <<: *rethinkdb-client-env
+      <<: *postgresdb-client-env
       <<: *elastic-client-env
 
-  search-ingest: # RethinkDB to Elasticsearch Service
+  search-ingest: # PostgreSQL to Elasticsearch Service
     image: ${PLACE_SEARCH_INGEST_REGISTRY:-docker.io}/placeos/${PLACE_SEARCH_INGEST_IMAGE:-search-ingest}:${PLACE_SEARCH_INGEST_TAG:-latest}
     restart: always
     container_name: *search-ingest-service
@@ -375,14 +382,16 @@ services:
     <<: *std-network
     <<: *std-logging
     depends_on:
-      - elastic
-      - rethink
+      elastic:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
     <<: *cap-drop
     environment:
       <<: *deployment-env
       <<: *opentelemetry-env
      # Service Hosts
-      <<: *rethinkdb-client-env
+      <<: *postgresdb-client-env
       <<: *elastic-client-env
     deploy:
       resources:
@@ -408,13 +417,13 @@ services:
 
   # Resources
 
-  postgres: # Database used by Staff API
+  postgres: # Database used by PgORM Models
     image: postgres:${POSTGRES_VERSION:-13-alpine}
     container_name: postgres
     hostname: postgres
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready"]
+      test: ["CMD-SHELL", "pg_isready -U $POSTGRES_USER -d $PG_DB"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -426,6 +435,7 @@ services:
       TZ: $TZ
       POSTGRES_USER: $POSTGRES_USER
       POSTGRES_PASSWORD: $POSTGRES_PASSWORD
+      POSTGRES_DB: $PG_DB
     deploy:
       resources:
         limits:
@@ -609,23 +619,6 @@ services:
       resources:
         limits:
           memory: "250m"
-
-  rethink:
-    image: rethinkdb:${RETHINKDB_VERSION:-2.4}
-    restart: always
-    container_name: rethink
-    hostname: rethink
-    healthcheck:
-      # Check if the DB's port is open
-      test: "bash -c ': &>/dev/null </dev/tcp/127.0.0.1/28015'"
-    <<: *std-network
-    <<: *std-logging
-    volumes:
-      - type: volume
-        source: rethink-data
-        target: /data/rethinkdb_data
-    environment:
-      TZ: $TZ
 
   # Aggregates logs and forwards them to Elasticsearch.
   logstash:

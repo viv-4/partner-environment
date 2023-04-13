@@ -1,0 +1,79 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+clean_before=${1:-true}
+# Path of installation directory
+base_path="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)/../"
+
+# Colours
+red='\033[0;31m'
+green='\033[0;32m'
+bold='\033[1m'
+reset='\033[0m'
+
+abort() (
+    echo -e "${red}${1}${reset}"
+    exit 1
+)
+
+bold() (
+    echo -e "${bold} ${1}${reset}"
+)
+
+green() (
+    echo -e "${green} ${1}${reset}"
+)
+
+if [ -z "$(docker ps -f "name=rethink" -f "status=running" -q )" ]; then
+    abort "rethink container not found!"
+fi
+
+if [ -z "$(docker network ls -f "name=placeos" -q )" ]; then
+    abort "docker network placeos not found!"
+fi
+
+
+dump_dir="$base_path/.rethink-dump"
+dump_file="rethink_dump-$(date +%F).tar.gz"
+mkdir -p $dump_dir
+
+pg_host=${PG_HOST:-postgres}
+pg_user=${POSTGRES_USER:-placeos}
+pg_pass=${POSTGRES_PASSWORD:-development}
+pg_db=${PG_DB:-placeos}
+pg_port=${PG_PORT:-5432}
+
+dump_rethink() (
+    bold "Dumping RethinkDB "
+    docker run --rm -it --network placeos -v $dump_dir:/tmp/rethink-dumps placeos/init:placeos-1.2111.1 rethinkdb dump --file /tmp/rethink-dumps/$dump_file --connect rethink:28015
+    if [ $? -eq 0 ]; then
+        green "RethinkDB dump complete"   
+    else
+        abort "RethinkDB dump failed"
+    fi
+)
+
+init_pg() (
+    bold "Initializing postgres"
+    docker run --rm -it --network placeos placeos/init:nightly task db:init host=$pg_host port=$pg_port user=$pg_user password=$pg_pass db=$pg_db
+    if [ $? -eq 0 ]; then
+        green "Postgres initialization complete"   
+    else
+        abort "Postgres initialization failed"
+    fi    
+)
+
+migrate_dump() (
+    bold "Migrating RethinkDB data to postgres"
+    docker run --rm -it --network placeos -v $dump_dir:/dump placeos/init:nightly task migrate:rethink_dump path=/dump/$dump_file host=$pg_host port=$pg_port user=$pg_user password=$pg_pass db=$pg_db clean_before=$clean_before
+    if [ $? -eq 0 ]; then
+        green "RethinkDB data migration complete"   
+    else
+        abort "RethinkDB data migration failed"
+    fi        
+)
+
+
+dump_rethink
+init_pg
+migrate_dump
