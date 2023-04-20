@@ -57,7 +57,6 @@ x-elastic-client-env: &elastic-client-env
   ELASTIC_PORT: ${ELASTIC_PORT:-9200}
   ES_HOST: ${ELASTIC_HOST:-elastic}
   ES_PORT: ${ELASTIC_PORT:-9200}
-  ES_DISABLE_BULK: true
 
 x-etcd-client-env: &etcd-client-env
   ETCD_HOST: ${ETCD_HOST:-etcd}
@@ -336,7 +335,6 @@ services:
       <<: *postgresdb-client-env
       SG_ENV: production
       STAFF_TIME_ZONE: $TZ
-      #PG_DATABASE_URL: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres/$P"
       PLACE_URI: "https://nginx"
       SSL_VERIFY_NONE: "true"
     deploy:
@@ -432,6 +430,7 @@ services:
     volumes:
       - postgres-data:/var/lib/postgresql/data
     environment:
+      <<: *postgresdb-client-env
       TZ: $TZ
       POSTGRES_USER: $POSTGRES_USER
       POSTGRES_PASSWORD: $POSTGRES_PASSWORD
