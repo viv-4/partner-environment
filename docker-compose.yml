@@ -121,8 +121,7 @@ services:
     restart: always
     container_name: rest-api
     hostname: api # Retained as nginx upstream is `api`
-    <<: *std-network
-    <<: *std-logging
+    <<: [*std-network,*std-logging, *cap-drop]
     depends_on:
       - auth
       - elastic
@@ -130,20 +129,11 @@ services:
       - redis
       - postgres
       - search-ingest
-    <<: *cap-drop
     env_file:
       - *jwt-public-key-env
       - *secret-key-env
     environment:
-      <<: *deployment-env
-      <<: *opentelemetry-env
-      # Service Hosts
-      <<: *elastic-client-env
-      <<: *etcd-client-env
-      <<: *place-loader-client-env
-      <<: *redis-client-env
-      <<: *postgresdb-client-env
-      <<: *search-ingest-client-env
+      <<: [*deployment-env,*opentelemetry-env,*elastic-client-env,*etcd-client-env,*place-loader-client-env,*redis-client-env,*postgresdb-client-env,*search-ingest-client-env]
     deploy:
       resources:
         limits:
@@ -154,18 +144,14 @@ services:
     restart: always
     container_name: auth
     hostname: auth
-    <<: *std-network
-    <<: *std-logging
+    <<: [*std-network,*std-logging,*cap-drop]
     depends_on:
       - redis
       - postgres
-    <<: *cap-drop
     env_file:
       - *secret-key-env
     environment:
-      <<: *opentelemetry-env
-      <<: *postgresdb-client-env
-      <<: *redis-client-env
+      <<: [*opentelemetry-env,*postgresdb-client-env,*redis-client-env]
       COAUTH_NO_SSL: "true"
       TZ: $TZ
       PLACE_URI: https://${PLACE_DOMAIN:-localhost:8443}
@@ -180,8 +166,7 @@ services:
     restart: always
     container_name: core
     hostname: core
-    <<: *std-network
-    <<: *std-logging
+    <<: [*std-network,*std-logging,*cap-drop]
     depends_on:
       - etcd
       - redis
@@ -193,7 +178,6 @@ services:
       - type: volume
         source: core-drivers
         target: /app/bin/drivers/
-    <<: *cap-drop
     env_file:
       - *secret-key-env
     ulimits:
@@ -202,12 +186,7 @@ services:
         soft: 0
         hard: 0
     environment:
-      <<: *deployment-env
-      <<: *opentelemetry-env
-      # Service Hosts
-      <<: *etcd-client-env
-      <<: *redis-client-env
-      <<: *postgresdb-client-env
+      <<: [*deployment-env,*opentelemetry-env,*etcd-client-env,*redis-client-env,*postgresdb-client-env]
     deploy:
       resources:
         limits:
@@ -218,14 +197,11 @@ services:
     restart: "no"
     container_name: edge
     hostname: edge
-    <<: *std-network
-    <<: *std-logging
+    <<: [*std-network,*std-logging,*cap-drop]
     depends_on:
       - core
-    <<: *cap-drop
     environment:
-      <<: *deployment-env
-      <<: *edge-env
+      <<: [*deployment-env,*edge-env]
     deploy:
       resources:
         limits:
@@ -236,22 +212,17 @@ services:
     restart: always
     container_name: frontend-loader
     hostname: frontend-loader
-    <<: *std-network
-    <<: *std-logging
+    <<: [*std-network,*std-logging,*cap-drop]
     volumes:
       - type: volume
         source: www
         target: /app/www
     depends_on:
       - postgres
-    <<: *cap-drop
     env_file:
       - *secret-key-env
     environment:
-      <<: *deployment-env
-      <<: *opentelemetry-env
-      # Service Hosts
-      <<: *postgresdb-client-env
+      <<: [*deployment-env,*opentelemetry-env,*postgresdb-client-env]
       PLACE_LOADER_WWW: www
     deploy:
       resources:
@@ -265,23 +236,16 @@ services:
     restart: always
     container_name: source
     hostname: source
-    <<: *std-network
-    <<: *std-logging
+    <<: [*std-network,*std-logging,*cap-drop]
     depends_on:
       - influxdb
       - redis
       - postgres
-    <<: *cap-drop
     env_file:
       - *influxdb-api-key
       - *secret-key-env
     environment:
-      <<: *deployment-env
-      <<: *opentelemetry-env
-      # Service Hosts
-      <<: *influxdb-client-env
-      <<: *redis-client-env
-      <<: *postgresdb-client-env
+      <<: [*deployment-env,*opentelemetry-env,*influxdb-client-env,*redis-client-env,*postgresdb-client-env]
     deploy:
       resources:
         limits:
@@ -292,24 +256,16 @@ services:
     restart: always
     container_name: triggers
     hostname: triggers
-    <<: *std-network
-    <<: *std-logging
+    <<: [*std-network,*std-logging,*cap-drop]
     depends_on:
       - core
       - etcd
       - redis
       - postgres
-    <<: *cap-drop
     env_file:
       - *secret-key-env
     environment:
-      <<: *deployment-env
-      <<: *opentelemetry-env
-      # Service Hosts
-      <<: *etcd-client-env
-      <<: *redis-client-env
-      <<: *postgresdb-client-env
-      <<: *smtp-client-env
+      <<: [*deployment-env,*opentelemetry-env,*etcd-client-env,*redis-client-env,*postgresdb-client-env,*smtp-client-env]
     deploy:
       resources:
         limits:
@@ -320,19 +276,15 @@ services:
     container_name: staff-api
     hostname: staff # Retained as nginx upstream is `staff`
     restart: unless-stopped
-    <<: *std-network
-    <<: *std-logging
+    <<: [*std-network,*std-logging,*cap-drop]
     depends_on:
       - rest-api
       - postgres
-    <<: *cap-drop
     env_file:
       - *jwt-public-key-env
       - *secret-key-env
     environment:
-      <<: *opentelemetry-env
-      <<: *redis-client-env
-      <<: *postgresdb-client-env
+      <<: [*opentelemetry-env,*redis-client-env,*postgresdb-client-env]
       SG_ENV: production
       STAFF_TIME_ZONE: $TZ
       PLACE_URI: "https://nginx"
@@ -348,18 +300,15 @@ services:
     image: ${PLACE_INIT_REGISTRY:-docker.io}/placeos/init:${PLACE_INIT_TAG:-latest}
     container_name: init
     restart: on-failure
-    <<: *std-network
-    <<: *std-logging
+    <<: [*std-network,*std-logging,*cap-drop]
     depends_on:
       postgres:
         condition: service_healthy
       #- search-ingest
-    <<: *cap-drop
     env_file:
       - *secret-key-env
     environment:
-      <<: *deployment-env
-      <<: *opentelemetry-env
+      <<: [*deployment-env,*opentelemetry-env,*postgresdb-client-env,*elastic-client-env]
       # User/Application Configuration
       PLACE_DOMAIN: ${PLACE_DOMAIN:-localhost:8443}
       PLACE_APPLICATION: ${PLACE_APPLICATION:-backoffice}
@@ -368,29 +317,20 @@ services:
       PLACE_EMAIL: ${PLACE_EMAIL:-support@place.tech}
       PLACE_PASSWORD: ${PLACE_PASSWORD:-development}
       PLACE_TLS: "${PLACE_TLS:-true}"
-      # Service Hosts
-      <<: *postgresdb-client-env
-      <<: *elastic-client-env
 
   search-ingest: # PostgreSQL to Elasticsearch Service
     image: ${PLACE_SEARCH_INGEST_REGISTRY:-docker.io}/placeos/${PLACE_SEARCH_INGEST_IMAGE:-search-ingest}:${PLACE_SEARCH_INGEST_TAG:-latest}
     restart: always
     container_name: *search-ingest-service
     hostname: *search-ingest-service
-    <<: *std-network
-    <<: *std-logging
+    <<: [*std-network,*std-logging,*cap-drop]
     depends_on:
       elastic:
         condition: service_healthy
       postgres:
         condition: service_healthy
-    <<: *cap-drop
     environment:
-      <<: *deployment-env
-      <<: *opentelemetry-env
-     # Service Hosts
-      <<: *postgresdb-client-env
-      <<: *elastic-client-env
+      <<: [*deployment-env,*opentelemetry-env,*postgresdb-client-env,*elastic-client-env]
     deploy:
       resources:
         limits:
@@ -403,11 +343,9 @@ services:
     hostname: dispatch
     depends_on:
       - nginx
-    <<: *cap-drop
+    <<: [*std-network,*std-logging,*cap-drop]
     env_file:
       - *secret-key-env
-    <<: *std-network
-    <<: *std-logging
     deploy:
       resources:
         limits:
@@ -425,8 +363,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-    <<: *std-network
-    <<: *std-logging
+    <<: [*std-network,*std-logging]
     volumes:
       - postgres-data:/var/lib/postgresql/data
     environment:
@@ -448,8 +385,7 @@ services:
     healthcheck:
       test: curl --silent --fail localhost:9200/_cat/health
       start_period: 1m
-    <<: *std-network
-    <<: *std-logging
+    <<: [*std-network,*std-logging]
     volumes:
       - type: volume
         source: elastic-data
@@ -471,8 +407,7 @@ services:
     hostname: etcd
     healthcheck:
       test: etcdctl endpoint health
-    <<: *std-network
-    <<: *std-logging
+    <<: [*std-network,*std-logging]
     environment:
       ALLOW_NONE_AUTHENTICATION: "yes"
       ETCD_NAME: "etcd"
@@ -496,8 +431,7 @@ services:
     restart: always
     container_name: influx
     hostname: influx
-    <<: *std-network
-    <<: *std-logging
+    <<: [*std-network,*std-logging]
     healthcheck:
       test: influx bucket list
     volumes:
@@ -517,8 +451,7 @@ services:
     restart: always
     container_name: chronograf
     hostname: chronograf
-    <<: *std-network
-    <<: *std-logging
+    <<: [*std-network,*std-logging]
     depends_on:
       - influxdb
     env_file:
@@ -549,8 +482,7 @@ services:
     restart: always
     container_name: mosquitto
     hostname: mosquitto
-    <<: *std-network
-    <<: *std-logging
+    <<: [*std-network,*std-logging]
     depends_on:
       - nginx
     volumes:
@@ -573,8 +505,7 @@ services:
     healthcheck:
       # Check if the http port is open
       test: "bash -c ': &>/dev/null </dev/tcp/127.0.0.1/80'"
-    <<: *std-network
-    <<: *std-logging
+    <<: [*std-network,*std-logging]
     depends_on:
       - rest-api
       - auth
@@ -606,8 +537,7 @@ services:
     hostname: redis
     healthcheck:
       test: keydb-cli ping
-    <<: *std-network
-    <<: *std-logging
+    <<: [*std-network,*std-logging]
     volumes:
       - type: volume
         source: redis-data
@@ -627,8 +557,7 @@ services:
     restart: always
     container_name: logstash
     hostname: logstash
-    <<: *std-network
-    <<: *std-logging
+    <<: [*std-network,*std-logging]
     depends_on:
       - elastic
       - validate-logstash-config
@@ -644,8 +573,7 @@ services:
       - kibana
     restart: "no"
     container_name: validate-logstash
-    <<: *std-network
-    <<: *std-logging
+    <<: [*std-network,*std-logging]
     volumes:
       - ${PWD}/config/logstash/config:/config
     command: logstash -t -f /config
@@ -658,8 +586,7 @@ services:
     restart: unless-stopped
     container_name: logspout
     hostname: logspout
-    <<: *std-network
-    <<: *std-logging
+    <<: [*std-network,*std-logging]
     depends_on:
       - logstash
     volumes:
@@ -673,8 +600,7 @@ services:
     restart: always
     container_name: kibana
     hostname: kibana
-    <<: *std-network
-    <<: *std-logging
+    <<: [*std-network,*std-logging]
     depends_on:
       - elastic
     environment:
@@ -694,8 +620,7 @@ services:
       - kibana
     container_name: curator
     hostname: curator
-    <<: *std-network
-    <<: *std-logging
+    <<: [*std-network,*std-logging]
     depends_on:
       - elastic
     volumes:
@@ -711,8 +636,7 @@ services:
     container_name: metricbeat
     hostname: metricbeat
     user: root
-    <<: *std-network
-    <<: *std-logging
+    <<: [*std-network,*std-logging]
     depends_on:
       - elastic
     environment:
