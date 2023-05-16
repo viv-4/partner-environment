@@ -83,12 +83,11 @@ x-redis-client-env: &redis-client-env
 x-postgresdb-client-env: &postgresdb-client-env
   PG_HOST: ${PG_HOST:-postgres}
   PG_PORT: ${PG_PORT:-5432}
-  PG_DB: ${PG_DB:-place_development}
+  PG_DB: ${PG_DB:-placeos}
   PG_USER: ${POSTGRES_USER:-postgres}
   PG_PASSWORD: ${POSTGRES_PASSWORD:-password}
-  PG_DATABASE: ${PG_DB:-place_development}
-  PG_DATABASE_URL: ${PG_DATABASE_URL:-postgresql://placeos:development@postgres:5432/place_development}
-
+  PG_DATABASE: ${PG_DB:-placeos}
+  PG_DATABASE_URL: ${PG_DATABASE_URL:-postgresql://placeos:development@postgres:5432/placeos}
 
 x-search-ingest-client-env: &search-ingest-client-env
   PLACE_SEARCH_INGEST_URI: ${PLACE_SEARCH_INGEST_URI:-http://search-ingest:3000}
