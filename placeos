@@ -827,7 +827,7 @@ migrate() (
     # shellcheck disable=2086
     ./scripts/run-migration ${clean}
     run_or_abort \
-    "docker-compose --env-file='${EMPTY_FILE}' --project-directory='${base_path}' ${PROFILES} up --detach" \
+    "docker-compose --env-file='${EMPTY_FILE}' --project-directory='${base_path}' up --detach --remove-orphans" \
     "Bringing up services..." \
     "Failed to start services."
 )
