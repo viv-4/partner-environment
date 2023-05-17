@@ -55,6 +55,7 @@ dump_rethink() (
 
 init_pg() (
     bold "Initializing postgres"
+    docker pull placeos/init:nightly
     docker run --rm -it --network placeos placeos/init:nightly task db:init host=$pg_host port=$pg_port user=$pg_user password=$pg_pass db=$pg_db
     if [ $? -eq 0 ]; then
         green "Postgres initialization complete"   
