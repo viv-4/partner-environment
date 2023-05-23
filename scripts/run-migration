@@ -56,7 +56,7 @@ dump_rethink() (
 init_pg() (
     bold "Initializing postgres"
     docker pull placeos/init:nightly
-    docker run --rm -it --network placeos placeos/init:nightly task db:init host=$pg_host port=$pg_port user=$pg_user password=$pg_pass db=$pg_db
+    docker run --rm -it --network placeos placeos/init:latest task db:init host=$pg_host port=$pg_port user=$pg_user password=$pg_pass db=$pg_db
     if [ $? -eq 0 ]; then
         green "Postgres initialization complete"   
     else
@@ -66,7 +66,7 @@ init_pg() (
 
 migrate_dump() (
     bold "Migrating RethinkDB data to postgres"
-    docker run --rm -it --network placeos -v $dump_dir:/dump placeos/init:nightly task migrate:rethink_dump path=/dump/$dump_file host=$pg_host port=$pg_port user=$pg_user password=$pg_pass db=$pg_db clean_before=$clean_before
+    docker run --rm -it --network placeos -v $dump_dir:/dump placeos/init:latest task migrate:rethink_dump path=/dump/$dump_file host=$pg_host port=$pg_port user=$pg_user password=$pg_pass db=$pg_db clean_before=$clean_before
     if [ $? -eq 0 ]; then
         green "RethinkDB data migration complete"   
     else
