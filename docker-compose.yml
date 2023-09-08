@@ -519,6 +519,7 @@ services:
         target: /etc/nginx/ssl
       - ${PWD}/.htpasswd-kibana:/etc/nginx/.htpasswd-kibana
     env_file:
+      - *secret-key-env
       - *jwt-public-key-env
       - *influxdb-api-key
     environment:
