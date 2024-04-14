@@ -58,10 +58,6 @@ x-elastic-client-env: &elastic-client-env
   ES_HOST: ${ELASTIC_HOST:-elastic}
   ES_PORT: ${ELASTIC_PORT:-9200}
 
-x-etcd-client-env: &etcd-client-env
-  ETCD_HOST: ${ETCD_HOST:-etcd}
-  ETCD_PORT: ${ETCD_PORT:-2379}
-
 x-influxdb-api-key: &influxdb-api-key .env.influxdb
 
 x-influxdb-client-env: &influxdb-client-env
@@ -124,7 +120,6 @@ services:
     depends_on:
       - auth
       - elastic
-      - etcd
       - redis
       - postgres
       - search-ingest
@@ -132,7 +127,7 @@ services:
       - *jwt-public-key-env
       - *secret-key-env
     environment:
-      <<: [*deployment-env,*opentelemetry-env,*elastic-client-env,*etcd-client-env,*place-loader-client-env,*redis-client-env,*postgresdb-client-env,*search-ingest-client-env]
+      <<: [*deployment-env,*opentelemetry-env,*elastic-client-env,*place-loader-client-env,*redis-client-env,*postgresdb-client-env,*search-ingest-client-env]
     deploy:
       resources:
         limits:
@@ -167,7 +162,6 @@ services:
     hostname: core
     <<: [*std-network,*std-logging,*cap-drop]
     depends_on:
-      - etcd
       - redis
       - postgres
     volumes:
@@ -185,7 +179,7 @@ services:
         soft: 0
         hard: 0
     environment:
-      <<: [*deployment-env,*opentelemetry-env,*etcd-client-env,*redis-client-env,*postgresdb-client-env]
+      <<: [*deployment-env,*opentelemetry-env,*redis-client-env,*postgresdb-client-env]
     deploy:
       resources:
         limits:
@@ -258,13 +252,12 @@ services:
     <<: [*std-network,*std-logging,*cap-drop]
     depends_on:
       - core
-      - etcd
       - redis
       - postgres
     env_file:
       - *secret-key-env
     environment:
-      <<: [*deployment-env,*opentelemetry-env,*etcd-client-env,*redis-client-env,*postgresdb-client-env,*smtp-client-env]
+      <<: [*deployment-env,*opentelemetry-env,*redis-client-env,*postgresdb-client-env,*smtp-client-env]
     deploy:
       resources:
         limits:
@@ -398,30 +391,6 @@ services:
       resources:
         limits:
           memory: "2g"
-
-  etcd:
-    image: quay.io/coreos/etcd:${ETCD_VERSION:-v3.5.4}
-    restart: always
-    container_name: etcd
-    hostname: etcd
-    healthcheck:
-      test: etcdctl endpoint health
-    <<: [*std-network,*std-logging]
-    environment:
-      ALLOW_NONE_AUTHENTICATION: "yes"
-      ETCD_NAME: "etcd"
-      ETCD_INITIAL_ADVERTISE_PEER_URLS: "http://etcd:2380"
-      ETCD_LISTEN_PEER_URLS: "http://0.0.0.0:2380"
-      ETCD_LISTEN_CLIENT_URLS: "http://0.0.0.0:2379"
-      ETCD_ADVERTISE_CLIENT_URLS: "http://etcd:2379"
-      ETCD_INITIAL_CLUSTER_TOKEN: "etcd-cluster"
-      ETCD_INITIAL_CLUSTER=etcd: "http://etcd:2380"
-      ETCD_INITIAL_CLUSTER_STATE: "new"
-      TZ: $TZ
-    deploy:
-      resources:
-        limits:
-          memory: "1g"
 
   influxdb:
     image: influxdb:${INFLUXDB_IMAGE_TAG:-2.0.8-alpine}
