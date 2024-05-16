@@ -1,0 +1,62 @@
+---
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  - job_name: system
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: varlogs
+          __path__: /var/log/*log
+
+  - job_name: docker
+    docker_sd_configs:
+      - host: unix:///var/run/docker.sock
+        refresh_interval: 5s
+    relabel_configs:
+      - source_labels: ["__meta_docker_container_name"]
+        regex: "/(.*)"
+        target_label: "container"
+    pipeline_stages:
+      - multiline:
+          firstline: '(^\{(.*))|([^\}\s]\s$)'
+          max_wait_time: 1s
+      - replace:
+          expression: '(\\n)'
+          replace: ""
+      - json:
+          expressions:
+            timestamp: time
+            level: level
+            program: program
+            source: source
+            message: message
+            exception: exception
+          drop_malformed: false
+      - multiline:
+          # Identify timestamps as first line of a multiline block. Enclose the string in single quotes.
+          firstline: '^\[\d{4}-\d{2}-\d{2} \d{1,2}:\d{2}:\d{2}\]'
+          max_wait_time: 3s
+      - regex:
+          # Flag (?s:.*) needs to be set for regex stage to capture full traceback log in the extracted map.
+          expression: '^(?P<time>\[\d{4}-\d{2}-\d{2} \d{1,2}:\d{2}:\d{2}\]) (?P<message>(?s:.*))$'
+      - labels:
+          level:
+          program:
+          source:
+          message:
+          exception:
+          timestamp:
+      - timestamp:
+          format: RFC3339
+          source: time
+

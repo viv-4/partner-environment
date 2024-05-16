@@ -18,6 +18,7 @@ volumes:
   core-repositories:
   core-drivers:
   www:
+  minio:
 
 # YAML Anchors
 
@@ -39,6 +40,7 @@ x-cap-drop: &cap-drop
     - SYS_CHROOT       # Use chroot(2), change root directory.
 
 x-deployment-env: &deployment-env
+  PLACE_LOG_FORMAT: ${LOG_FORMAT:-JSON}
   LOG_LEVEL: ${LOG_LEVEL:-warn}
   ENV: ${ENV:-development}
   SG_ENV: ${SG_ENV:-development}
@@ -486,7 +488,6 @@ services:
       - type: volume
         source: nginx-data
         target: /etc/nginx/ssl
-      - ${PWD}/.htpasswd-kibana:/etc/nginx/.htpasswd-kibana
     env_file:
       - *secret-key-env
       - *jwt-public-key-env
@@ -518,105 +519,81 @@ services:
         limits:
           memory: "250m"
 
-  # Aggregates logs and forwards them to Elasticsearch.
-  logstash:
-    image: blacktop/logstash:${ELASTIC_VERSION:-7.10.2}
+  minio:
+    image: minio/minio
     profiles:
-      - kibana
-    restart: always
-    container_name: logstash
-    hostname: logstash
-    <<: [*std-network,*std-logging]
-    depends_on:
-      - elastic
-      - validate-logstash-config
+      - lgtm    
+    entrypoint:
+      - sh
+      - -euc
+      - |
+        mkdir -p /data/loki-data && \
+        mkdir -p /data/loki-ruler && \
+        minio server /data
+    environment:
+      - MINIO_ROOT_USER=loki
+      - MINIO_ROOT_PASSWORD=supersecret
+      - MINIO_PROMETHEUS_AUTH_TYPE=public
+      - MINIO_UPDATE=off
+    ports:
+      - 9000
     volumes:
-      - ${PWD}/config/logstash/config:/config
-      - ${PWD}/config/logstash/patterns:/opt/logstash/extra_patterns
-    command: logstash -f /config
+      - minio:/data
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:9000/minio/health/live" ]
+      interval: 15s
+      timeout: 20s
+      retries: 5
 
-  # Run 'docker-compose run --rm validate-logstash-config' to quickly check the logstash config.
-  validate-logstash-config:
-    image: blacktop/logstash:${ELASTIC_VERSION:-7.10.2}
+  loki:
+    image: grafana/loki:latest
     profiles:
-      - kibana
-    restart: "no"
-    container_name: validate-logstash
+      - lgtm        
+    container_name: loki
+    ports:
+      - "3100:3100"
     <<: [*std-network,*std-logging]
     volumes:
-      - ${PWD}/config/logstash/config:/config
-    command: logstash -t -f /config
-
-  # Sends all container json-file logs to logstash
-  logspout:
-    image: vincit/logspout-gelf:3.2.6-alpine
-    profiles:
-      - kibana
-    restart: unless-stopped
-    container_name: logspout
-    hostname: logspout
-    <<: [*std-network,*std-logging]
+      - ${PWD}/config/lgtm/loki-config.yaml:/etc/loki/config.yaml
     depends_on:
-      - logstash
+      - minio
+
+  promtail:
+    image: grafana/promtail:latest
+    profiles:
+      - lgtm        
     volumes:
+      - ${PWD}/config/lgtm/promtail-config.yaml:/etc/promtail/config.yaml:ro
       - /var/run/docker.sock:/var/run/docker.sock
-    command: gelf://${LOGSTASH_HOST}:${LOGSTASH_PORT}
-
-  kibana:
-    image: blacktop/kibana:${ELASTIC_VERSION:-7.10.2}
-    profiles:
-      - kibana
-    restart: always
-    container_name: kibana
-    hostname: kibana
     <<: [*std-network,*std-logging]
+    command: -config.file=/etc/promtail/config.yaml
     depends_on:
-      - elastic
+      - loki
+
+  grafana:
+    image: grafana/grafana:latest
+    profiles:
+      - lgtm        
+    ports:
+      - "3000:3000"
     environment:
-      <<: *elastic-client-env
-      NODE_OPTIONS: "--max-old-space-size=200" # fixes memory leak (https://github.com/elastic/kibana/issues/5170)
-      HTTPS_METHOD: "nohttp"
-      ELASTICSEARCH_HOSTS: "http://${ELASTIC_HOST}:${ELASTIC_PORT}"
-      SERVER_BASEPATH: "/${PLACE_METRICS_ROUTE}"
-      SERVER_REWRITEBASEPATH: "true"
-      SERVER_PUBLICBASEURL: "https://${PLACE_DOMAIN}/${PLACE_METRICS_ROUTE}"
-
-  # Takes care of piling up Elasticsearch indices/logs. Can do many other things as well.
-  # Set up a cron job that runs "docker-compose run --rm curator --config /config.yml /action-file.yml" every once in a while.
-  curator:
-    image: bobrik/curator:5.8.1
-    profiles:
-      - kibana
-    container_name: curator
-    hostname: curator
+      - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
     <<: [*std-network,*std-logging]
     depends_on:
-      - elastic
-    volumes:
-      - ${PWD}/config/curator/action-file.yml:/action-file.yml
-      - ${PWD}/config/curator/config.yml:/config.yml
-
-  # Gets metrics from host machine and send to elastic
-  metricbeat:
-    image: elastic/metricbeat:${ELASTIC_VERSION:-7.10.2}
-    profiles:
-      - metricbeat
-    restart: unless-stopped
-    container_name: metricbeat
-    hostname: metricbeat
-    user: root
-    <<: [*std-network,*std-logging]
-    depends_on:
-      - elastic
-    environment:
-      <<: *elastic-client-env
-    volumes:
-      - /proc:/hostfs/proc:ro
-      - /sys/fs/cgroup:/hostfs/sys/fs/cgroup:ro
-      - /:/hostfs:ro
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ${PWD}/config/metricbeat.yml:/usr/share/metricbeat/metricbeat.yml
-    cap_add:
-      - SYS_PTRACE
-      - DAC_READ_SEARCH
-    command: ["metricbeat", "-e", "--strict.perms=false", "-system.hostfs=/hostfs", "-E", "output.elasticsearch.hosts=[$ELASTIC_HOST:$ELASTIC_PORT]"]
+      - loki
+    entrypoint:
+      - sh
+      - -euc
+      - |
+        mkdir -p /etc/grafana/provisioning/datasources
+        cat <<EOF > /etc/grafana/provisioning/datasources/ds.yaml
+        apiVersion: 1
+        datasources:
+          - name: Loki
+            type: loki
+            access: proxy
+            url: http://loki:3100
+        EOF
+        /run.sh

@@ -164,7 +164,6 @@ Arguments:
     --domain DOMAIN         Domain to configure. [default: localhost:8443]
     --application APP       Application to configure. [default: backoffice]
     --analytics             Set-up analytics stack, including MQTT & InfluxDB & Chronograf
-    --kibana                Set-up Kibana and Elastic stack.
     -v, --verbose           Write logs to STDOUT in addition to the log file.
     -h, --help              Display this message.
 EOF
@@ -174,7 +173,7 @@ start_environment() (
     PROFILES=""
     hard_reset=false
     enable_analytics=false
-    enable_kibana=false
+    enable_lgtm=false
     email_argument=""
     password_argument=""
     domain_argument=""
@@ -213,8 +212,8 @@ start_environment() (
         --analytics)
             enable_analytics=true
             ;;
-        --kibana)
-            enable_kibana=true
+        --lgtm)
+            enable_lgtm=true
             ;;
         -v | --verbose)
             VERBOSE="true"
@@ -301,16 +300,9 @@ start_environment() (
         PROFILES+=" --profile analytics"
     fi
 
-    if [[ -d "${base_path}/.htpasswd-kibana" ]]; then
-        prompt "Detected malformed auth file. Cleaning up"
-        rm -r "${base_path}/.htpasswd-kibana"
-    fi
-
-    if [[ $ENABLE_KIBANA == "true" ]] || [[ $enable_kibana == "true" ]]; then
-        PROFILES+=" --profile kibana"
-        if [[ $(uname) == "Linux" ]]; then
-            PROFILES+=" --profile metricbeat"
-        fi
+    if [[ $ENABLE_LGTM == "true" ]] || [[ $enable_lgtm == "true" ]]; then
+        PROFILES+=" --profile lgtm"
+        export LOG_FORMAT=JSON
     fi
 
     run_or_abort \
