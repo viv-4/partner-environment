@@ -66,7 +66,7 @@ See the [PlaceOS Drivers repository](https://github.com/PlaceOS/drivers) for fur
 These will need to be installed prior to installation:
 
 - [bash >= 4.4.20](https://www.gnu.org/software/bash)
-- [docker >= 18.06.0](https://docs.docker.com/engine/install)
+- [docker >= 20.10.0](https://docs.docker.com/engine/install)
 - [git >= 2.27.0](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
 
 #### Optional tools
