@@ -145,7 +145,7 @@ hard_reset() (
         "Failed to drop Elasticsearch indices."
 
     run_or_abort \
-        "docker-compose --env-file='${EMPTY_FILE}' --project-directory='${base_path}' restart nginx" \
+        "docker compose --env-file='${EMPTY_FILE}' --project-directory='${base_path}' restart nginx" \
         "Restarting nginx..." \
         "Failed to restart nginx." \
         "true"
@@ -312,7 +312,7 @@ start_environment() (
 
 
     run_or_abort \
-        "docker-compose --env-file='${EMPTY_FILE}' --project-directory='${base_path}' ${PROFILES} pull --quiet" \
+        "docker compose --env-file='${EMPTY_FILE}' --project-directory='${base_path}' ${PROFILES} pull --quiet" \
         "Pulling images..." \
         "Failed to pull images."
 
@@ -324,7 +324,7 @@ start_environment() (
         "Failed to create user entity."
 
     run_or_abort \
-        "docker-compose --env-file='${EMPTY_FILE}' --project-directory='${base_path}' ${PROFILES} up --detach" \
+        "docker compose --env-file='${EMPTY_FILE}' --project-directory='${base_path}' ${PROFILES} up --detach" \
         "Bringing up services..." \
         "Failed to start services."
 
@@ -374,7 +374,7 @@ stop_environment() (
     done
 
     run_or_abort \
-        "docker-compose --env-file='${EMPTY_FILE}' --project-directory='${base_path}' down --remove-orphans" \
+        "docker compose --env-file='${EMPTY_FILE}' --project-directory='${base_path}' down --remove-orphans" \
         "Tearing down $PLACEOS_PRODUCT" \
         "Failed to teardown $PLACEOS_PRODUCT"
 )
@@ -586,7 +586,7 @@ update_environment() (
 
     if [[ $restart_services == "true" ]]; then
         run_or_abort \
-            "docker-compose --env-file='${EMPTY_FILE}' --project-directory='${base_path}' restart" \
+            "docker compose --env-file='${EMPTY_FILE}' --project-directory='${base_path}' restart" \
             "Restarting services on ${version}..." \
             "Failed to restart services"
     fi
@@ -742,7 +742,7 @@ uninstall_environment() (
 
     # Stop environment and remove containers, volumes, and images.
     run_or_abort \
-        "docker-compose --env-file='${EMPTY_FILE}' --project-directory='${base_path}' down --volumes --networks --rmi all" \
+        "docker compose --env-file='${EMPTY_FILE}' --project-directory='${base_path}' down --volumes --networks --rmi all" \
         "Stopping ${PLACEOS_PRODUCT}..." \
         "Failed to stop ${PLACEOS_PRODUCT}"
 
@@ -819,7 +819,7 @@ migrate() (
     # shellcheck disable=2086
     ./scripts/run-migration ${clean}
     run_or_abort \
-    "docker-compose --env-file='${EMPTY_FILE}' --project-directory='${base_path}' up --detach --remove-orphans" \
+    "docker compose --env-file='${EMPTY_FILE}' --project-directory='${base_path}' up --detach --remove-orphans" \
     "Bringing up services..." \
     "Failed to start services."
 )

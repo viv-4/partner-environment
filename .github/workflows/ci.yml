@@ -82,9 +82,9 @@ jobs:
           name: logs-${{ matrix.os }}-${{ matrix.version }}-${{ github.sha }}
           path: .logs/*.log
       - name: List service statuses
-        run: docker-compose ps
+        run: docker compose ps
       - name: Check API is reachable
         continue-on-error: true
         run: curl -S --retry 10 --tls-max 1 --insecure https://localhost:8443/api/engine/v2
-      - name: Test raw `docker-compose`
-        run: docker-compose down
+      - name: Test raw `docker compose`
+        run: docker compose down

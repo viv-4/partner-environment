@@ -92,7 +92,7 @@ open_url() (
 
 ensure_command 'git'
 ensure_command 'docker'
-ensure_command 'docker-compose'
+ensure_command 'docker compose'
 
 # 2. Clones the repo into `~/.placeos`, or the PLACEOS_HOME environment variable
 

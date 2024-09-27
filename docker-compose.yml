@@ -1,5 +1,3 @@
-version: "3.7"
-
 networks:
   placeos:
     name: placeos
@@ -114,7 +112,7 @@ services:
   # Services
 
   rest-api: # Rest API
-    image: ${PLACE_REST_API_REGISTRY:-docker.io}/placeos/rest-api:${PLACE_REST_API_TAG:-latest}
+    image: ${PLACE_REST_API_REGISTRY:-docker.io}/placeos/rest-api:${PLACE_REST_API_TAG:-latest} 
     restart: always
     container_name: rest-api
     hostname: api # Retained as nginx upstream is `api`
