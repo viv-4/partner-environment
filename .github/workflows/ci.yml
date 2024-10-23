@@ -14,8 +14,7 @@ jobs:
       matrix:
         stable: [true]
         os:
-          - ubuntu-22.04
-          - ubuntu-24.04
+          - ubuntu-latest
     steps:
       -
         name: Install PlaceOS
@@ -42,20 +41,15 @@ jobs:
       matrix:
         stable: [true]
         os:
-          - ubuntu-18.04
           - ubuntu-latest
         version:
           - "" # Test an empty tag
-          - placeos-1.2202.2
-          - placeos-1.2205.4
-          - placeos-1.2206.1
-          - placeos-1.2207.0
+          - placeos-2.2409.0
           - latest
-          - preview
         include:
           - version: nightly
             stable: false
-            os: ubuntu-18.04
+            os: ubuntu-latest
           - version: nightly
             stable: false
             os: ubuntu-latest
