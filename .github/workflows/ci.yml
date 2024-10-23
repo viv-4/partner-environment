@@ -51,7 +51,7 @@ jobs:
             stable: false
             os: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Test initialization
         if: ${{ matrix.version != '' }} # Testing a set tag
         run: ./placeos start --verbose
