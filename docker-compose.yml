@@ -13,7 +13,6 @@ volumes:
   nginx-data:
   postgres-data:
   redis-data:
-  core-repositories:
   core-drivers:
   www:
   minio:
@@ -165,9 +164,6 @@ services:
       - redis
       - postgres
     volumes:
-      - type: volume
-        source: core-repositories
-        target: /app/repositories/
       - type: volume
         source: core-drivers
         target: /app/bin/drivers/
